@@ -59,3 +59,11 @@ A tracing subscriber receives events and span activity. Its layers can filter, f
 ## PTY
 
 A pseudoterminal (PTY) is a terminal-like connection used by a terminal host to communicate with a program. On Windows, MFT's elevated relaunch attaches to an existing console so its logs remain visible in the caller's terminal. Console attachment and captured stdout/stderr pipes have different behavior; see [cross-process logging](logging.md#elevation-and-daemon-log-forwarding).
+
+## Executable resource
+
+A Windows executable resource is named or numbered data embedded in the binary, such as an icon or manifest. A resource script declares what the build should include. See [executable icons](executable-icons.md).
+
+## Application manifest
+
+A Windows application manifest is XML declaring application identity, dependencies and compatibility settings. Common-Controls v6 enables the task-dialog dependency; `longPathAware` declares a separate filesystem compatibility setting. The template embeds its manifest through a resource script. See [native message boxes](native-message-boxes.md) and [Windows path length](windows-paths.md).

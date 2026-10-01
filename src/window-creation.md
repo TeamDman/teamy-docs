@@ -4,6 +4,8 @@ A Windows app can need a window even without a visible interface. Tray callbacks
 
 Use tb's direct Win32 setup or Piing's versioned helpers as prior art. For [system tray icons](system-tray.md), their hidden windows are part of the solution. For a rendered desktop terminal, continue to [terminal integration](terminal-integration.md).
 
+[Executable icons](executable-icons.md) explains how these consumers reuse resources from the application module. [Native message boxes](native-message-boxes.md) explains message and task dialogs, which have their own interaction and manifest requirements.
+
 ## Register the class and create the right window
 
 tb registers a `WNDCLASSW` with its callback, checks registration and calls `CreateWindowExW`. Piing uses `teamy-windows` 0.7.0 to register a `WNDCLASSEXW` and create its window. Both create hidden, normal top-level windows. Neither uses an `HWND_MESSAGE` message-only window. This matters for their `TaskbarCreated` broadcast handling.

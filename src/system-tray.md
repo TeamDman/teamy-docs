@@ -4,6 +4,8 @@ When you want to add a system tray icon to an app, start with Piing and tb. They
 
 The inspected `teamy-rust-cli` template has Windows startup helpers but no tray window, notification icon or message pump. Add this capability explicitly. Keep the command-line interface available through [the template](rust-cli-template.md).
 
+Use [the executable's embedded icon](executable-icons.md) for shared application artwork. [Native message boxes](native-message-boxes.md) covers Piing's menu-triggered reports and their manifest requirement.
+
 ## Choose the matching prior art
 
 | Need | Start with | Implementation |

@@ -4,7 +4,9 @@ Choose the behavior your application needs, then reuse its prior art. A tray ico
 
 | Need | Start here | Prior art |
 | --- | --- | --- |
+| Reuse the icon embedded in an executable | [Executable icons](executable-icons.md) | The template, tb and teamy-windows. |
 | Tray status, menus or a background control surface | [System tray icons](system-tray.md) | Piing and tb. |
+| Show a native message box or configuration-error choices | [Native message boxes](native-message-boxes.md) | Piing's task dialogs and tb's message boxes. |
 | Create a window and dispatch Windows events | [Window creation](window-creation.md) | tb and Piing's teamy-windows helpers. |
 | Host interactive programs or render terminal output | [Terminal integration](terminal-integration.md) | Teamy-Studio. |
 

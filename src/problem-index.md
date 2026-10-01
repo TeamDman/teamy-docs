@@ -18,7 +18,9 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
+| Load or extract the EXE icon without another `include_bytes!` embedding | [Executable icons and resources](executable-icons.md) | The template, tb and teamy-windows. |
 | Add a system tray icon to this app | [Windows system tray icons](system-tray.md) | Piing, tb and teamy-windows. |
+| Show a native message box or configuration-error dialog | [Native message boxes](native-message-boxes.md) | Piing's TaskDialogIndirect and Common-Controls v6 manifest. |
 | Create a window and handle its events | [Window creation and event loops](window-creation.md) | tb and Piing's Windows helpers. |
 | Embed a terminal or run an interactive child process | [Terminal integration](terminal-integration.md) | Teamy-Studio's PTY, terminal core and rendering boundary. |
 
@@ -41,6 +43,6 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 ## Keep the prior art useful
 
-Use book search with the operation you want: `tray icon`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
+Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
 
 [Curate prior art](curating-prior-art.md) explains how we turn existing projects and GitHub stars into recommendations. A source snapshot, a tested outcome and a research candidate have different evidence. Keep those differences visible.

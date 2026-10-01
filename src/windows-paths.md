@@ -20,7 +20,9 @@ The inspected `teamy-rust-cli` template embeds a manifest, but it does not decla
 
 The inspected locator and local mover manifests have the same contents. Each project owns its copied manifest, so updating the template would require a separate adoption step for existing projects.
 
-Sources: [template manifest at revision `7e62d72`](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/resources/app.manifest), [template resource build](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/build.rs), [embed-resource result handling](https://docs.rs/embed-resource/3.0.6/embed_resource/enum.CompilationResult.html#method.manifest_required).
+Sources: [template manifest at revision `7e62d72`](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/resources/app.manifest), [template resource build](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/build.rs), [locked embed-resource 3.0.11 result handling](https://docs.rs/embed-resource/3.0.11/src/embed_resource/lib.rs.html#350-358).
+
+The same resource script embeds [the executable icon](executable-icons.md). Piing's [native task dialogs](native-message-boxes.md#activate-common-controls-v6-in-the-manifest) use an active Common-Controls v6 dependency. Icon resources, Common-Controls activation and long-path awareness are separate declarations.
 
 ### Proposed template follow-up
 
