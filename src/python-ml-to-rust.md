@@ -4,6 +4,8 @@ When a useful Python ML demonstration appears, our target is a Rust program whos
 
 Use [the Rust CLI template](rust-cli-template.md) for the new tool. Connect it to [typed output](output-shape.md), [logging](logging.md), [cancellation](cancellation.md) and [GPU backend selection](gpu-inference.md). Start by [finding existing source](source-lookup.md), then pin model and code revisions separately.
 
+For a new timeline announcement, follow [the model adoption workflow](model-adoption.md) to preserve evidence, define typed requests and build a reusable terminal runtime before adding a GUI.
+
 ## Choose how much of the runtime to replace
 
 Our speech tools demonstrate three useful stages:

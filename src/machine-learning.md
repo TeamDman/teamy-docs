@@ -4,6 +4,7 @@ When a model or Python demonstration becomes useful, our target is a Rust progra
 
 | Need | Start here | Prior art |
 | --- | --- | --- |
+| Turn an announcement into reproducible local inference | [Model adoption workflow](model-adoption.md) | Evidence capture, typed contracts, terminal services and parity gates. |
 | Select an inference backend and device | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber. |
 | Adapt a Python model implementation | [Port Python ML to Rust](python-ml-to-rust.md) | Weight loading, preprocessing, parity and profiling. |
 | Reuse a useful source implementation | [Makepad's inference patterns](makepad-patterns.md) | Makepad study references and our speech-tool implementations. |

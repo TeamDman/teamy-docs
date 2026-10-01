@@ -22,12 +22,14 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Add a system tray icon to this app | [Windows system tray icons](system-tray.md) | Piing, tb and teamy-windows. |
 | Show a native message box or configuration-error dialog | [Native message boxes](native-message-boxes.md) | Piing's TaskDialogIndirect and Common-Controls v6 manifest. |
 | Create a window and handle its events | [Window creation and event loops](window-creation.md) | tb and Piing's Windows helpers. |
+| Take a screenshot, capture a window or inspect its controls | [Screen capture and typed observations](screen-capture.md) | WINC, Cursor-Hero's UI Automation and ShareX. |
 | Embed a terminal or run an interactive child process | [Terminal integration](terminal-integration.md) | Teamy-Studio's PTY, terminal core and rendering boundary. |
 
 ## Machine learning and audio
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
+| Turn a timeline model announcement into a local Rust tool | [Model adoption workflow](model-adoption.md) | Evidence manifests, typed contracts, reference fixtures and resident speech runtimes. |
 | Choose the best way to run inference on a GPU | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber's published backends. |
 | Convert a Python ML implementation to Rust | [Port Python ML to Rust](python-ml-to-rust.md) | Model loading, preprocessing, parity and profiling in our speech tools. |
 | Learn from Makepad and keep control of the runtime | [Reuse Makepad's inference patterns](makepad-patterns.md) | Makepad study references and our speech-tool implementations. |
@@ -43,6 +45,6 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 ## Keep the prior art useful
 
-Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
+Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `screenshot`, `UI Automation`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
 
 [Curate prior art](curating-prior-art.md) explains how we turn existing projects and GitHub stars into recommendations. A source snapshot, a tested outcome and a research candidate have different evidence. Keep those differences visible.
