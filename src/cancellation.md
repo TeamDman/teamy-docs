@@ -1,6 +1,6 @@
 # Cooperative cancellation
 
-Pass a cancellation token through the work and check it at safe boundaries. Installing a Ctrl+C handler only requests cancellation. It does not interrupt every running function or future.
+Pass a cancellation token through the work and check it at safe boundaries. The first Ctrl+C requests cancellation. Workers must observe the token; it does not interrupt every running function or future. The handler's repeated-signal policy is described below.
 
 ## Use the shared library
 
@@ -67,6 +67,8 @@ In the pinned library, the first Ctrl+C requests cancellation. The default handl
 The example explicitly disables that repeated-signal force exit. This is an example policy, not the current mover or template configuration. A command promising a controlled stop must define how it reaches and records a safe boundary.
 
 Human progress and cancellation notices can remain on stderr when stdout contains JSON. Keep those notices out of the machine-readable result stream.
+
+The template's tracing layer also observes configured span and log-message stop conditions. Quieting a formatted log destination does not replace cancellation checks in the work. When adding a background log writer, coordinate its shutdown with the interruption policy; see [logging and buffering](logging.md#buffering-means-several-different-things).
 
 The example propagates stdout write and flush failures through `eyre`. A result is not successfully published when its output failed.
 

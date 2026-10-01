@@ -15,6 +15,8 @@ Return a typed result when a command completes. Use `eyre` to propagate an unrec
 
 Specify whether stdout contains one JSON document or a stream of records. Keep logs, terminal control sequences and progress bars out of that stream. Text and JSON should project the same typed value rather than run different implementations of the operation.
 
+Use [the template's logging layers](logging.md) for operational events. A separate NDJSON log file is an event stream, not the JSON command result or its schema.
+
 ## Findings belong in the result
 
 A completed check can find a conflict. That finding is a useful result, not an unrecoverable failure to run the check. A caller should inspect a field such as `ready`, or match a documented outcome enum, instead of decoding special exit numbers.

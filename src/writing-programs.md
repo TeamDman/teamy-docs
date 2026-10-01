@@ -1,6 +1,8 @@
 # Writing programs
 
-Build the smallest useful behavior that can be demonstrated with real inputs. Record the intended result before choosing a framework or generating a large scaffold.
+Start a new Teamy CLI project in Rust using [teamy-rust-cli](rust-cli-template.md). Understand its parser, [logging](logging.md), [output renderer](output-shape.md) and [cancellation](cancellation.md) before adding domain behavior. These shared decisions are the starting point for our programs.
+
+Build the smallest useful behavior that can be demonstrated with real inputs. Record the intended result and use the template's existing capabilities to produce it.
 
 ## Define the result
 

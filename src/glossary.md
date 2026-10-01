@@ -43,3 +43,19 @@ Reflection lets generic code inspect descriptions of types and their fields or o
 ## Figue
 
 [Figue](https://github.com/bearcove/figue) is a parser for CLI arguments, configuration files and environment variables, based on Facet. Those input mechanisms still need a documented precedence and effects contract in the consuming tool.
+
+## Event
+
+A tracing event records something that happened, with a level, target and structured fields. Events belong to operational communication; a command's typed result has a separate contract. See [logging](logging.md).
+
+## Span
+
+A tracing span represents an operation over time and carries context for the events inside it. Spans help connect related work and provide profiling boundaries. See [logging](logging.md#events-spans-and-destinations).
+
+## Subscriber
+
+A tracing subscriber receives events and span activity. Its layers can filter, format and write that instrumentation to different destinations. The template uses `tracing-subscriber`; see [the logging setup](logging.md#terminal-logs-ndjson-and-tracy).
+
+## PTY
+
+A pseudoterminal (PTY) is a terminal-like connection used by a terminal host to communicate with a program. On Windows, MFT's elevated relaunch attaches to an existing console so its logs remain visible in the caller's terminal. Console attachment and captured stdout/stderr pipes have different behavior; see [cross-process logging](logging.md#elevation-and-daemon-log-forwarding).

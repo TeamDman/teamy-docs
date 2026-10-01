@@ -9,3 +9,7 @@ This repository and its generated GitHub Pages site contain only unclassified ma
 - Pushes to `main` deploy the public site. Review outgoing source and commit metadata before publishing.
 
 The site currently uses GitHub's default project address. Custom-domain DNS and private-document hosting are separate tasks.
+
+# Software guidance
+
+New Teamy CLI projects are expected to use Rust and `teamy-rust-cli`. Ground guidance in the template and reference implementations, with revision-specific source links. Explain why we keep each capability and distinguish observed behavior, local additions and requirements still to implement. Do not present a generic checklist for an unrelated language as our project starting point.

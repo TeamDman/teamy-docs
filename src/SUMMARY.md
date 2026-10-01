@@ -3,7 +3,9 @@
 [Start here](index.md)
 
 - [Writing programs](writing-programs.md)
+  - [Start with the Rust CLI template](rust-cli-template.md)
   - [Good CLI](good-cli.md)
+  - [Logging with tracing](logging.md)
   - [Cooperative cancellation](cancellation.md)
   - [CLI output shapes](output-shape.md)
   - [Find source before downloading](source-lookup.md)

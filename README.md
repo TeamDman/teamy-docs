@@ -1,6 +1,6 @@
 # teamy-docs
 
-A public mdBook for practical strategies: writing programs, playing games, CLI design, and repository hygiene.
+A public mdBook for practical strategies: writing programs, playing games, CLI design, and repository hygiene. New Teamy CLIs use Rust and `teamy-rust-cli`; the book explains the template's decisions and capabilities through implementation references, including [logging](src/logging.md) and [template orientation](src/rust-cli-template.md).
 
 Repository: [TeamDman/teamy-docs](https://github.com/TeamDman/teamy-docs). Website: [Teamy Docs](https://teamdman.github.io/teamy-docs/).
 

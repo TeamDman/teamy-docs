@@ -1,6 +1,6 @@
 # Good CLI
 
-A [command line interface (CLI)](glossary.md#cli) should make its inputs, outputs and effects predictable for a person, a script and an agent. The examples below describe a hypothetical `example-tool`; they are design conventions, not existing commands.
+A [command line interface (CLI)](glossary.md#cli) should make its inputs, outputs and effects predictable for a person, a script and an agent. For new Teamy CLIs, use Rust and [the CLI template](rust-cli-template.md). Preserve its shared capabilities and implement any missing behavior deliberately. The examples below describe a hypothetical `example-tool`; they are design conventions, not existing commands.
 
 ## An explicit command surface
 
@@ -44,6 +44,12 @@ Text, JSON and other formats should render the same typed result. Document its s
 Use exit 0 when the command completes and produces its declared result. Put findings such as conflicts, incomplete observations and readiness in typed fields the caller can inspect. An unrecoverable error propagates through `eyre` and exits nonzero. Callers should not need an exit-code taxonomy to distinguish domain outcomes. Stderr output alone does not indicate failure.
 
 See [typed results and errors](output-shape.md) for this contract and [cancellation with teamy-cancellation](cancellation.md) for stopping work safely.
+
+## Logging and operational context
+
+Use the template's `tracing` and `tracing-subscriber` setup. Shared logging options are `--log-filter` and `--log-file`; the local template also supports the `--log-level` alias. Emit useful fields and spans rather than embedding log lines in command results. Keep human communication available on stderr when stdout contains JSON.
+
+Read [logging with tracing](logging.md) before changing filters or writers. It documents the template's actual defaults, file effects, independent Tracy filter, Piing/MFT replay buffers and MFT's console attachment and daemon forwarding. Those reference implementations explain capabilities a new CLI can reuse and the limits it must account for.
 
 ## Effects and permissions
 
