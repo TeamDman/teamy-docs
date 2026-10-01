@@ -4,6 +4,8 @@ Start a new Teamy CLI project in Rust using [teamy-rust-cli](rust-cli-template.m
 
 Build the smallest useful behavior that can be demonstrated with real inputs. Record the intended result and use the template's existing capabilities to produce it.
 
+Use [Find a solution](problem-index.md) to locate prior art by intent. Our software topics cover [command-line tools](good-cli.md), [desktop applications](desktop-applications.md), [machine learning and audio](machine-learning.md), and [source and file organization](source-and-files.md). A project can contribute useful patterns to several topics.
+
 ## Define the result
 
 A useful problem statement names the actor, input, expected output and relevant constraint:
@@ -36,38 +38,7 @@ This sketch illustrates vocabulary only. For `teamy-mover`, generate a plan thro
 
 ## Generate a plan with the local mover prototype
 
-The local prototype exposes planning commands. Replace `<existing-root>` with an approved existing root; the relative source/destination examples resolve within that base. These commands create or update plan data and inspect proposed moves. They do not move the source files.
-
-`plan create` creates a plan. `plan action add` adds a proposed move inside that plan. The command hierarchy distinguishes the plan from its individual actions:
-
-| Object | Commands |
-| --- | --- |
-| Plan | `plan create`, `plan list`, `plan show`, `plan dry-run` |
-| Action within a plan | `plan action add`, `plan action list`, `plan action show`, `plan action remove` |
-
-```powershell
-$planFile = "review.plan.json"
-teamy-mover plan create --plan-file $planFile `
-  --name "Review" --base-dir "<existing-root>"
-teamy-mover plan action add --plan-file $planFile `
-  --source existing.txt --destination desired.txt `
-  --reason "Place the existing file in its reviewed location"
-teamy-mover plan action list --plan-file $planFile
-teamy-mover plan action show --plan-file $planFile --action-id 1
-teamy-mover plan show --plan-file $planFile
-teamy-mover plan dry-run --plan-file $planFile
-teamy-mover plan list --directory "."
-```
-
-To withdraw a proposed action, remove it from the plan:
-
-```powershell
-teamy-mover plan action remove --plan-file $planFile --action-id 1
-```
-
-Removal changes plan metadata and preserves the previous plan revision. It does not remove the source file. Action IDs remain stable; use the ID returned by `plan action list`.
-
-This prototype has no execution command. Its plan schema is the authoritative input format; the conceptual sketch above is for explanation. These examples make no release or publication claim.
+See [Plan file movement](moving-files.md) for the command hierarchy, runnable checkout examples, ordered simulation and revision history. It uses the local `teamy-mover` prototype as prior art for this problem. `plan create` creates a plan; `plan action add` edits its contents. The prototype has no executor or published release.
 
 ## Keep the feedback loop short
 

@@ -13,3 +13,5 @@ The site currently uses GitHub's default project address. Custom-domain DNS and 
 # Software guidance
 
 New Teamy CLI projects are expected to use Rust and `teamy-rust-cli`. Ground guidance in the template and reference implementations, with revision-specific source links. Explain why we keep each capability and distinguish observed behavior, local additions and requirements still to implement. Do not present a generic checklist for an unrelated language as our project starting point.
+
+Organize chapters by the problems they solve. Link projects as implementation references within those topics. Add common intent wording to the problem index so a person or agent can find prior art without knowing its repository name. Curated external references and stars must have a named purpose and an explicit evidence/adoption status.

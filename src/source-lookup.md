@@ -2,6 +2,10 @@
 
 Look for an existing approved checkout before proposing a download. Match repository identity and the revision relevant to the question; a similarly named folder is insufficient.
 
+Our prior art is [locate-git-projects-on-my-computer](https://github.com/TeamDman/locate-git-projects-on-my-computer), which combines indexed filesystem markers, Git metadata and Cargo package metadata. This topic is the entry point for “I want the source for this library.” The repository is an implementation reference, not a category the reader must know in advance.
+
+The public baseline inspected on 1 October 2026 is [`d02d04d`](https://github.com/TeamDman/locate-git-projects-on-my-computer/tree/d02d04d738a8922e7e40f87eb4127727442e6eb8). Its [discovery implementation](https://github.com/TeamDman/locate-git-projects-on-my-computer/blob/d02d04d738a8922e7e40f87eb4127727442e6eb8/src/discovery.rs) shows indexed discovery and enrichment. The catalogue, Cargo-cache selection and clone-location proposals described below are later local changes, not features of that public snapshot.
+
 ## Inspect a Rust dependency
 
 Read the package's locked source/version or Git revision, then check whether that implementation is already cached. Resolve `CARGO_HOME` for the current invocation; its default is `.cargo` under the runtime user's home. Do not assume a particular person's home path, and never read `credentials.toml` for source lookup.

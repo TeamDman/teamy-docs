@@ -1,6 +1,8 @@
 # teamy-docs
 
-A public mdBook for practical strategies: writing programs, playing games, CLI design, and repository hygiene. New Teamy CLIs use Rust and `teamy-rust-cli`; the book explains the template's decisions and capabilities through implementation references, including [logging](src/logging.md) and [template orientation](src/rust-cli-template.md).
+A public mdBook for finding our prior art by the problem it solves. Start with [Find a solution](src/problem-index.md): command-line tools, desktop applications, machine learning and audio, and source/file organization. Projects are implementation references within those topics.
+
+New Teamy CLIs use Rust and `teamy-rust-cli`. The book grounds decisions in code, distinguishes published snapshots from local work, and curates external references by purpose.
 
 Repository: [TeamDman/teamy-docs](https://github.com/TeamDman/teamy-docs). Website: [Teamy Docs](https://teamdman.github.io/teamy-docs/).
 

@@ -20,6 +20,8 @@ An unknown subcommand should fail with a useful diagnostic. Do not reinterpret a
 
 Use the hierarchy to name the object being changed. `plan create` creates the plan; `plan action add` adds an action inside it. Keep `plan list` distinct from `plan action list`.
 
+See [argument parsing](cli-parsing.md) for the Facet/Figue implementation pattern and its current limits.
+
 ## File, standard-input and argument inputs
 
 Support explicit input sources where useful:
