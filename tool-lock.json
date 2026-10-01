@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "tool": "mdbook",
+  "toolVersion": "0.5.4",
+  "platform": "x86_64-pc-windows-msvc",
+  "releaseUrl": "https://github.com/rust-lang/mdBook/releases/tag/v0.5.4",
+  "metadataUrl": "https://api.github.com/repos/rust-lang/mdBook/releases/tags/v0.5.4",
+  "assetUrl": "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-pc-windows-msvc.zip",
+  "assetSha256": "8a6b2421aa522de06d746871d2b8fff9c8d71773467e310a4516d2566e7f2de4",
+  "license": "MPL-2.0"
+}

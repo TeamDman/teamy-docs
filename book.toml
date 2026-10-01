@@ -1,0 +1,23 @@
+[book]
+title = "Teamy Docs"
+authors = ["TeamDman"]
+description = "Practical strategies for writing programs, playing games, and maintaining useful tools."
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+site-url = "/teamy-docs/"
+git-repository-url = "https://github.com/TeamDman/teamy-docs"
+
+[output.html.playground]
+runnable = false
+
+[output.html.fold]
+enable = true
+level = 1
