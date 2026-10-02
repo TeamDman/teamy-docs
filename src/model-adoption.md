@@ -8,6 +8,8 @@ Use [the Rust CLI template](rust-cli-template.md), [Python-to-Rust parity work](
 
 Follow the timeline URL to the publisher's model card, source, weights and reference implementation. [Find existing local source](source-lookup.md) before fetching another copy. Record an evidence manifest outside the public book when its inputs need a restricted audience.
 
+When a spoken name is ambiguous, inspect relevant already-approved context before asking the user to repeat it. Open tab titles and URLs, selected page contents, local source metadata and public stars can identify the intended reference. A match establishes identity; it does not verify the page's performance claims. Name the browser coordinator and distinguish assigned ownership from enforced access controls.
+
 | Evidence field | What to retain |
 | --- | --- |
 | Origin | Announcement URL, publisher and primary source URLs. |

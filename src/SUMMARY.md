@@ -28,6 +28,7 @@
     - [Windows path length](windows-paths.md)
     - [Repository hygiene and scratch](repository-hygiene.md)
   - [Curate prior art](curating-prior-art.md)
+  - [Review plans and retain decisions](plan-records.md)
 - [Playing games](playing-games.md)
 - [Shared glossary](glossary.md)
 - [Publication and audiences](publication.md)

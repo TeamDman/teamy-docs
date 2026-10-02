@@ -18,6 +18,8 @@ That statement immediately suggests a [CLI surface](good-cli.md), an input schem
 
 Separate discovery, planning and execution when a task changes valuable state. A plan should name concrete objects, actions and reasons. Execution should reject stale assumptions and report progress durably.
 
+Use [plan records and decisions](plan-records.md) for gradual typing, passage feedback and publication boundaries. The book currently builds and checks local links; that does not establish that every code snippet compiles.
+
 For a move tool, a synthetic plan sketch could contain:
 
 ```json

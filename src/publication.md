@@ -18,6 +18,8 @@ The deployment workflow runs on a push to `main` or manual dispatch. Its build j
 
 Review the source and outgoing commit metadata before pushing. Changes pushed to `main` are published automatically. The site has no sign-in or private-documents area.
 
+The workflow does not compile every example. See [plan records and validation](plan-records.md#know-what-the-book-validates) for its current guarantees and the proposed executable-example harness. Private plans and comments can produce a separately approved public decision record; they are not automatically site content.
+
 The default address uses `/teamy-docs/`; `book.toml` records that path so generated 404-page asset links work there. Connecting `docs.teamdman.ca` remains a separate DNS task.
 
 Source: [GitHub Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
