@@ -32,6 +32,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Turn a timeline model announcement into a local Rust tool | [Model adoption workflow](model-adoption.md) | Evidence manifests, typed contracts, reference fixtures and resident speech runtimes. |
 | Review a plan, retain a decision or check whether examples compile | [Plan records and decisions](plan-records.md) | Versioned data, quote anchors, validation coverage and approved public projections. |
 | Choose the best way to run inference on a GPU | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber's published backends. |
+| Run Jev-style decisions locally or score text and image choices | [Finite-choice models](finite-choice-models.md) | Julia-1, explicit vision limits and native Rust versus ONNX providers. |
 | Convert a Python ML implementation to Rust | [Port Python ML to Rust](python-ml-to-rust.md) | Model loading, preprocessing, parity and profiling in our speech tools. |
 | Learn from Makepad and keep control of the runtime | [Reuse Makepad's inference patterns](makepad-patterns.md) | Makepad study references and our speech-tool implementations. |
 
@@ -49,3 +50,5 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `screenshot`, `UI Automation`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
 
 [Curate prior art](curating-prior-art.md) explains how we turn existing projects and GitHub stars into recommendations. A source snapshot, a tested outcome and a research candidate have different evidence. Keep those differences visible.
+
+For a constrained grammar, parser, semantic checker or verified state machine, read [formal methods and language implementation](formal-methods.md). It connects Prolog, NuSMV, Alloy and the paused Bend rewrite to their distinct purposes.

@@ -36,7 +36,9 @@ The [deployment workflow](https://github.com/TeamDman/teamy-docs/blob/b5cc4a110e
 
 [mdBook testing](https://rust-lang.github.io/mdBook/cli/test.html) can test Rust examples. [Rustdoc attributes](https://doc.rust-lang.org/rustdoc/write-documentation/documentation-tests.html) distinguish runnable tests, `no_run` examples that compile, and `ignore` examples that are skipped. This does not validate PowerShell commands, JSON fixtures or conceptual notation.
 
-The next validation improvement is a bounded example harness. Record each example's purpose, dependencies, edition, target and validation mode. Compile complete Rust examples against pinned dependencies. Parse actual JSON/schema fixtures and run CLI examples against synthetic inputs. Label contextual fragments and conceptual sketches explicitly; report them outside the verified coverage count.
+The [finite-choice example harness](finite-choice-models.md#start-with-a-compiling-contract) compares one complete book snippet against the actual local service-core example. It runs core tests and executable assertions offline. This establishes a bounded checked example; it neither runs model inference nor extends Pages CI to every code fence. The matching service API is currently a local addition.
+
+Broaden validation gradually. Record each example's purpose, dependencies, edition, target and validation mode. Parse actual JSON/schema fixtures and run CLI examples against synthetic inputs. Label contextual fragments and conceptual sketches explicitly; report them outside the verified coverage count.
 
 ## Publish an approved projection
 

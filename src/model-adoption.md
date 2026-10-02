@@ -1,6 +1,8 @@
-# Turn a model announcement into a local Rust tool
+# Implement a model in a local Rust tool
 
 Start with one useful task and one reproducible fixture. Preserve the announcement's evidence, define the model contract, then build a terminal interface before adding a GUI. This is a proposed reusable workflow, grounded in our speech tools. It does not describe an existing universal model service.
+
+For Jev-style decisions and local Julia-1, start with [score supplied choices](finite-choice-models.md). It names the models, provider alternatives and visual-input limits. A complete Rust example with passing assertions supplies a bounded implementation target.
 
 Use [the Rust CLI template](rust-cli-template.md), [Python-to-Rust parity work](python-ml-to-rust.md) and [backend selection](gpu-inference.md). An announcement supplies a research lead. It does not establish that its model fits our task or that we may process every available input.
 
