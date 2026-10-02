@@ -16,6 +16,8 @@ Measure the user's wait and the internal phases separately. These boundaries are
 
 Keep cold process startup, first use of a shape or kernel, and repeated resident requests separate. Record whether compilation and disk-cache warming are included. For generation, define first-token timing explicitly; for a finite-choice model, measure the completed ordered score result. A slow first output alone does not identify whether loading, compilation, queueing or inference caused it.
 
+For the local resident CLI, use the [interactive timing fields](interactive-inference.md#run-repeatable-sessions-without-a-terminal) to distinguish the parent's submission-to-reply clock from the worker's job duration. [Mode changes and decision cancellation](interactive-inference.md#separate-model-residency-from-conversation-history) can discard residency, so separate those requests from successful repeated requests within one mode.
+
 ## Add useful spans before detailed events
 
 Create a coarse span around each meaningful phase. Record request IDs, shapes, counts and selected backend, rather than dumping prompts, tensors or filesystem contents. Use debug events for allocation, cache and lifecycle decisions; use trace events for detailed steps when they answer a question. Instrumentation itself can change allocation and timing.

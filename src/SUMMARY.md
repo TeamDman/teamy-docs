@@ -24,6 +24,7 @@
   - [Machine learning and audio](machine-learning.md)
     - [Score supplied choices](finite-choice-models.md)
     - [Generate text locally](local-text-generation.md)
+    - [Use resident interactive inference](interactive-inference.md)
     - [Adopt a model announcement](model-adoption.md)
     - [GPU-enabled inference](gpu-inference.md)
     - [Port Python ML to Rust](python-ml-to-rust.md)

@@ -17,7 +17,7 @@ teamy-llm prompt --model qwen3.8-27b-uncensored-q4-k-m `
 
 The example requires already prepared model artifacts. Prompting does not download weights or search a Downloads folder. `--model` selects its managed model directory; `--model-dir ./models/orca` selects an explicit prepared directory instead. These flags cannot be combined. Model preparation is a separate acquisition operation.
 
-Omitting both flags retains the configured default, falling back to the existing `qwopus-3.5-9b-coder-q4-k-m` model when no default is registered. `prompt` warns about implicit selection and lists available models. Adding OrcaRouter did not silently replace that default.
+Omitting both flags uses the explicit configured preference when present. Otherwise selection uses the first existing registered model, then the built-in `qwopus-3.5-9b-coder-q4-k-m` when no model is registered. `prompt` warns about implicit selection and lists available models. Adding OrcaRouter did not silently replace an explicitly selected default. [Persistent model preferences](interactive-inference.md#select-a-model-and-persist-a-default) provide separate `model default set` and `model default show` commands.
 
 `prompt` streams generated text to stdout. Diagnostics use stderr; `--debug --log-file ./generation.ndjson` adds an explicitly selected NDJSON diagnostic file. Errors can leave partial generated text if streaming has already begun. Use [logging](logging.md) and [cancellation](cancellation.md) when integrating the command into another application.
 
@@ -27,21 +27,23 @@ The qualified weight file is [OrcaRouter's Qwen3.8-27B-Uncensored Q4_K_M GGUF at
 
 Tokenization and single-turn rendering use the separate [publisher source at `8cb32d7`](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored/blob/8cb32d72080f6a47bf34dc5adf8067daa6c63a31/tokenizer_config.json). Independent publisher-template fixtures cover Direct and Thinking modes, with and without a system message. The Rust renderer and Hugging Face tokenizer matched those fixture strings and token IDs exactly.
 
+The pinned Hugging Face weight and source repositories require authorized access. A readable model card does not establish permission to download its files. Acquire artifacts separately with the required account access; prompting never grants access or downloads them implicitly.
+
 For each service request, the adapter compares GGUF-vocabulary token IDs with independently encoded Hugging Face IDs before GPU prefill. Any token or ordering mismatch rejects the request. Session preparation can precede this comparison; it is not a promise that no GPU allocation has occurred. The numerical runtime uses [Makepad revision `9e5e3d2`](https://github.com/makepad/makepad/tree/9e5e3d2b03214f8c2c37adffa0e308c815662060), with a resident quantized CUDA session. See [Makepad's execution patterns](makepad-patterns.md).
 
 This local slice is text-only and single-turn. It does not run a vision projector, accept tool calls or preserve conversation history through the prompt command. Its context limit is 1,024 tokens, counting the rendered prompt plus requested output. Oversized requests fail rather than truncate silently.
 
-`prompt` defaults to Direct mode and 256 new tokens. Explicit named OrcaRouter selection with `--thinking` defaults to 512; the legacy Thinking default remains 1,024. An explicit model directory does not receive that named-model default, so set `--max-new-tokens` yourself. Reduce the output budget for longer prompts.
+`prompt` defaults to Direct mode and 256 new tokens. Named or configured-default OrcaRouter selection with `--thinking` defaults to 512 in the newer local CLI; the legacy Thinking default remains 1,024. An explicit model directory does not receive that named-model default, so set `--max-new-tokens` yourself. Reduce the output budget for longer prompts.
 
 A real CUDA Thinking run asked “What does café mean in English?” It completed successfully with 59 prompt tokens and the requested 24 generated tokens. Its output was bounded reasoning without a final answer when that token limit was reached. This establishes that tested Unicode/Thinking execution path, not completed task accuracy or a useful default output budget.
 
 `--timeout-ms` bounds generation, excluding queue wait and model loading. `--stop-after-duration` requests cooperative cancellation from CLI startup. Cancellation checks occur between operations; they do not preempt an active load operation or GPU kernel. Generated text is an observation, not permission to execute a command.
 
-The final local release passed all 40 model-free subprocess checks. Both `prompt --timeout-ms 0` and `benchmark --timeout-ms 0` failed with nonzero status and human diagnostics before missing-model access. Real generation runs and model-free argument checks remain separate evidence.
+The earlier release used for the tokenizer-reuse measurements below passed 40 model-free subprocess checks. Both `prompt --timeout-ms 0` and `benchmark --timeout-ms 0` failed with nonzero status and human diagnostics before missing-model access. The newer typed CLI separately passed [73 subprocess checks](interactive-inference.md#inspect-the-implementation-behind-the-interface). Real generation runs and model-free argument checks remain separate evidence.
 
 ## Reuse the runtime within one process
 
-A new `prompt` process starts cold. Runtime reuse applies to repeated calls through one service instance or the benchmark's `--repeat` loop. These commands do not automatically connect to a running daemon or route requests to a remote service.
+A new `prompt` process starts cold. Runtime reuse applies to repeated calls through one service instance, the benchmark's `--repeat` loop or [resident interactive inference](interactive-inference.md). These commands do not automatically connect to a running daemon or route requests to a remote service.
 
 To measure that distinction for the same 32-token Direct workload:
 
@@ -52,7 +54,19 @@ teamy-llm benchmark --model qwen3.8-27b-uncensored-q4-k-m `
   -- "Why is the sky blue?"
 ```
 
-Select `--no-thinking` explicitly: benchmark defaults to testing both modes, unlike prompt. Its output is readable benchmark lines. Time to first token measures the first token event from request submission, including loading when needed. UTF-8 event buffering and callbacks affect that boundary; it is not pure decoder or kernel time.
+Select `--no-thinking` explicitly: benchmark defaults to testing both modes, unlike prompt. The newer local CLI produces a typed report, text on a terminal and JSON when redirected; `--output-format json` selects JSON explicitly. The historical measurements below used the earlier line-oriented report. Time to first token measures the first token event from request submission, including loading when needed. UTF-8 event buffering and callbacks affect that boundary; it is not pure decoder or kernel time.
+
+## Understand the Windows mmap message
+
+At the qualified Makepad revision, the [non-Unix loader](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/mmap.rs) returns an unavailable-platform error without attempting a Windows file mapping. That message identifies an implementation gap; elevation, Git long-path settings and renaming the model do not enable mapping.
+
+Our adapter first reads every GGUF byte to verify SHA-256. Makepad then allocates an owned weight arena and its [Windows bulk reader](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/bulk_read.rs) reads tensor data with unbuffered I/O. Those reads do not use the ordinary filesystem-cache warmup from hashing. The [CUDA execution backend](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/llm/src/cuda_exec/real.rs) subsequently uploads weights and builds execution graphs. A mapping would not remove that upload.
+
+The observed session-preparation span combines disk staging, device setup and graph work. It does not prove CUDA source is compiled again at each prompt: this backend uses CUDA kernels compiled during the Rust build. Use finer phase instrumentation before proposing a kernel compilation cache.
+
+Ollama's [Windows CUDA loader at `dd1d4e9`](https://github.com/ollama/ollama/blob/dd1d4e99e7e8475d1669f566bb5c0ae30db419f1/llm/server.go) explicitly defaults to no mmap, with a performance rationale. Its interactive CLI reuses a server runner instead. This is implementation prior art, not a matched benchmark against our adapter.
+
+Keep first-load identity verification. A cached length and modification time do not establish that weights are unchanged. Reusing an already validated resident runtime is the first optimization; a single-pass verifier/loader or native Windows mapping needs its own lifetime, mutation, parity and performance qualification. [Terminal interfaces](terminal-interfaces.md#keep-the-loaded-runtime-between-turns) explain the runtime-lifetime pattern.
 
 ## Local release measurement: tokenizer reuse
 
