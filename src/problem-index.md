@@ -34,8 +34,9 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Review a plan, retain a decision or check whether examples compile | [Plan records and decisions](plan-records.md) | Versioned data, quote anchors, validation coverage and approved public projections. |
 | Choose the best way to run inference on a GPU | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber's published backends. |
 | Run Jev-style decisions locally or score text and image choices | [Finite-choice models](finite-choice-models.md) | Julia-1, explicit vision limits and native Rust versus ONNX providers. |
+| Run a local text model, choose its prompt format or reuse its loaded runtime | [Generate text locally](local-text-generation.md) | Local teamy-llm prompt, pinned OrcaRouter GGUF and Makepad CUDA session. |
 | Convert a Python ML implementation to Rust | [Port Python ML to Rust](python-ml-to-rust.md) | Model loading, preprocessing, parity and profiling in our speech tools. |
-| Produce independent Python model fixtures with limited host access | [Containerized Python references](python-reference-containers.md) | Proposed Podman/uv/Torch workflow, explicit WSL2 GPU setup and frozen inputs. |
+| Produce independent Python model fixtures with limited host access | [Containerized Python references](python-reference-containers.md) | Observed isolated Podman/uv/Torch CPU and CUDA reference, explicit WSL2 GPU setup and frozen inputs. |
 | Learn from Makepad and keep control of the runtime | [Reuse Makepad's inference patterns](makepad-patterns.md) | Makepad study references and our speech-tool implementations. |
 
 ## Source and file organization

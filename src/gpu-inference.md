@@ -1,6 +1,6 @@
 # Run GPU-enabled inference
 
-For a new Teamy tool, follow this chapter and [the Rust CLI template](rust-cli-template.md). The proposed inference default is source-defined Rust operations with explicit GPU execution, where the model and required operators support it. That matches our goals of inspectable operations, memory ownership and lifecycle control. Its performance advantage remains a question for measurement.
+For a new Teamy tool, follow this chapter and [the Rust CLI template](rust-cli-template.md). Source-defined Rust operations with explicit GPU execution match our goals of inspectable operations, memory ownership and lifecycle control, where the model and required operators support them. Use measured performance to choose the execution default. Julia's current native CUDA correctness baseline is too slow for that role on the measured short fixture; its explicitly mixed ONNX CUDA session was faster.
 
 Keep a compatible independent reference and use [Python-to-Rust porting](python-ml-to-rust.md) to preserve behavior. Follow the documented approach before starting a separate provider study. Ask the user before a new alternative-provider comparison; the existing [Julia native and ONNX comparison](finite-choice-models.md) is already within its approved scope.
 
@@ -16,6 +16,33 @@ Rust is the application language in several of these strategies. It does not ide
 | Rust over a tensor framework | Rust can define layers over LibTorch through tch or over Burn. TorchScript can instead retain an exported graph. | The framework and backend implement tensor execution and kernels; application code retains preprocessing and decoding. | Runtime, operator and device support depend on the chosen backend. The [main transcriber's direct runner](https://github.com/TeamDman/teamy-transcriber/blob/d87d5020d0a2c3847c5fa461d9bd9de39901b52e/src/native_whisper/tch_safetensors.rs#L1) still needs LibTorch. |
 
 These are ownership tradeoffs, not a speed ranking. Source-defined inference can still use graphs and native libraries. An ONNX wrapper removes Python from product inference while retaining ONNX Runtime's C/C++ engine. A handwritten kernel needs a correctness contract and a measured purpose.
+
+For the current local Qwen generation path, read [Generate text locally](local-text-generation.md). It covers explicit model selection, GGUF identity, independent prompt token checks, the text-only context bound and measured cold versus resident behavior. Julia choice scoring and Qwen text generation remain separate workloads.
+
+## Make Julia's precision and placement explicit
+
+The local [finite-choice implementation](finite-choice-models.md) now has a shared encoder, a Burn provider and an ONNX provider. These additions are not yet a published release. Start with the chapter's stdin and quoted `@file` requests, explicit model directories and runtime-library path. Both providers use the same 1,024-token context, 256-token head, question and ordered option IDs for qualification.
+
+The independent [publisher-Python reference](python-reference-containers.md) completed six cases on CPU and CUDA using FP32, deterministic settings and TF32 disabled. Repeat runs reproduced the tested arrays, intermediate tensors and scores exactly. CPU/CUDA scores passed the tolerances fixed before inference. Native Rust/Burn CPU and CUDA, ONNX CPU and explicitly mixed ONNX CPU/CUDA also passed all six cases with unchanged acceptance criteria. These establish bounded parity evidence, not model accuracy on a broader task. The longest input tested was 137 raw tokens, padded to 144; the configured 1,024-token limit is not a full-length qualification result.
+
+ONNX CUDA registration does not establish that every graph node runs on GPU. The strict CUDA session rejected this Julia export during preparation because some nodes were assigned to CPU. The new CLI requires `--allow-cpu-fallback` to permit a mixed session. That flag does not turn the export into an all-GPU model. With `--profile-prefix`, the result returns the actual timestamped trace path in `profiling-file`; use node execution events to inspect placement.
+
+The qualified mixed session used ONNX Runtime 1.24.2 with TF32 disabled. Across the six inputs, its trace recorded 6,780 CUDA events and 798 CPU events. The defined heavy-operation check covers `Attention`, `FusedMatMul`, `Gemm`, `MatMul`, `MatMulNBits` and `MultiHeadAttention`: 882 such events ran on CUDA, and none on CPU. Every recorded CPU event had int64 input/output type metadata; the operations were `Concat`, `Slice`, `Squeeze`, `Reshape` and `Mul`, consistent with shape/index calculations. This establishes placement for this session and input set. It does not guarantee placement for another graph, shape, runtime or configuration, and summed node durations are not request wall time.
+
+The final local release CLI passed all 40 subprocess contract checks without model inference, including rejection of zero generation timeouts before missing-model access. A separate actual ONNX CPU stdin request passed independent encoding and score comparison for one three-option fixture. Those checks establish CLI behavior and that tested transport/provider combination. They are separate from GPU placement evidence and performance measurements. The new code remains an unpublished local implementation. See [the request contract and qualification](finite-choice-models.md#keep-qualification-separate-from-implementation).
+
+Keep these paths distinct when measuring:
+
+| Path | Numerical task and precision | Measurement boundary |
+| --- | --- | --- |
+| Publisher Python reference | Julia choice scores, FP32, TF32 disabled, math attention. | Independent fixture generation; reference timing is not a Rust implementation benchmark. |
+| Local native Burn CUDA | Julia choice scores; explicit FP32 multiply-and-sum baseline avoids TF32-accelerated matrix multiplication. | Six-case parity passed. This slow correctness baseline needs optimization; startup, JIT compilation and resident inference need separate samples. |
+| Local ONNX Runtime | The pinned Julia export, TF32 disabled; CPU or explicitly permitted mixed CPU/CUDA placement. | Record runtime and graph identities, actual node placement, session preparation and completed inference. |
+| Makepad GGUF generation | Supported Qwen generation with the actual GGUF tensor types, quantization and prompt template. | Different model and task from Julia classification. Compare equivalent generation workloads separately. |
+
+Do not rank these paths using unrelated logits, generated-token rates or first-request timings. The CLI's `inference-ms` includes request encoding, result validation and completed score readback; `load-ms` covers provider construction after the initial encoder check. Neither is pure GPU kernel time. `--repeat` reuses one provider, so later samples may benefit from JIT compilation and resident allocations. Use [performance analysis](performance-analysis.md) to separate those effects.
+
+The [local unpublished release benchmark](finite-choice-models.md#local-unpublished-release-benchmark-one-matched-fixture) used the same two-option, 40-padded-token request across all four paths on 2 October 2026. Its two resident samples were 16.1 and 16.2 ms for mixed ONNX CUDA, 38.2 and 42.2 ms for ONNX CPU, 266.6 and 294.4 ms for native CPU, and 5,924.1 and 5,614.8 ms for the native CUDA FP32 correctness baseline. Each captured final result passed independent encoding and score comparison. These are comparable completed-request timings for that fixture, not kernel timings or a general ranking. The linked table retains provider loading and first-inference costs, executable/runtime identities and sampling limits. Profiling and concurrent build/inference work were excluded; debug diagnostics and sampled-memory monitoring were enabled.
 
 ## Reuse resident runtimes and meaningful readiness
 
@@ -34,7 +61,7 @@ At [`595ecca`](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552
 
 ## Measure speed together with correctness
 
-This chapter was reviewed on 1 October 2026. The cited transcriber main snapshot was committed on 24 August 2026; its native branch and the TTS snapshot on 23 September 2026. Those source dates are separate from measurement dates. TTS's README records a historical LibTorch workload: 57 ms median and 62 ms p95 for “Hello, friend,” with 2,590 ms model loading. That passage does not state a measurement date. It does not compare all current backends. See [the recorded result](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552a851c467a9a19dcce3/README.md#L260).
+This chapter was reviewed on 2 October 2026. The cited transcriber main snapshot was committed on 24 August 2026; its native branch and the TTS snapshot on 23 September 2026. Those source dates are separate from measurement dates. TTS's README records a historical LibTorch workload: 57 ms median and 62 ms p95 for “Hello, friend,” with 2,590 ms model loading. That passage does not state a measurement date. It does not compare all current backends. See [the recorded result](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552a851c467a9a19dcce3/README.md#L260).
 
 Its CLI correctness gate checks finite output and stable sample counts. Separate native comparison tools impose waveform parity checks. These are different levels of evidence. The native README warns that default CUDA output can differ substantially from the upstream FP32 waveform. Having a strict comparison gate does not establish that the default backend passes it. Keep default-precision and strict-FP32 results separate. See [native validation requirements](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552a851c467a9a19dcce3/native/README.md#L67).
 
@@ -47,4 +74,4 @@ For a new benchmark, record these timings separately:
 
 For an approved native/ONNX comparison, share the same encoding fixtures, weights, shapes and output tolerances. Record provider placement, warmups, memory and transfers. Separate strict FP32 from TF32 or other reduced precision: the transcriber's native default is TF32 computation with FP32 storage, and [ONNX CUDA also exposes a TF32 setting](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#use_tf32).
 
-Keep model and executable identities, device, precision, raw measurements and correctness outcomes together. A faster result that fails parity is an experiment, not an accepted optimization. Measure the [cancellation boundary](cancellation.md) too. No native-versus-ONNX performance winner was established by this documentation review.
+Keep model and executable identities, device, precision, raw measurements and correctness outcomes together. A faster result that fails parity is an experiment, not an accepted optimization. Measure the [cancellation boundary](cancellation.md) too. The current Julia release measurements establish a narrow resident-latency result; new shapes, devices and optimization strategies need their own comparison.
