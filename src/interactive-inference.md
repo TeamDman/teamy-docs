@@ -2,7 +2,7 @@
 
 Use `teamy-llm interactive` when you want several requests against one loaded runtime. It combines a Ratatui interface with the same generation and finite-choice services used by batch commands. Generating text and scoring supplied choices remain distinct operations.
 
-This chapter describes the installed and qualified local release on 2 October 2026. The service source changes have not yet been published. Use that release or the matching development build; another installation may not expose these commands. Model-free validation and numerical performance evidence remain separate.
+This chapter describes local additions to `teamy-llm-service`; their source has not yet been published. Use the matching development build and check its help. The qualified release and captures from 2 October 2026 are identified below, with their original context settings. Those results do not measure later context, transport or mapping changes.
 
 ## Select a model and persist a default
 
@@ -11,7 +11,7 @@ An explicit selection remains useful when reproducing a result:
 ```powershell
 teamy-llm model list
 teamy-llm interactive --model qwen3.8-27b-uncensored-q4-k-m `
-  --no-thinking --max-new-tokens 64
+  --context-tokens 8192 --no-thinking --max-new-tokens 64
 ```
 
 The model must already be prepared. Starting the session does not acquire weights. `--model-dir ./models/orca` selects an existing prepared directory instead; it cannot be combined with `--model`.
@@ -42,7 +42,7 @@ Run this from the `teamy-llm-service` checkout. Its wrapper requires an installe
 .\scripts\cargo-cuda.ps1 -CargoArguments @(
   'run', '--release', '--locked', '-p', 'teamy_llm_cli', '--',
   'interactive', '--model', 'qwen3.8-27b-uncensored-q4-k-m',
-  '--no-thinking', '--max-new-tokens', '64'
+  '--context-tokens', '8192', '--no-thinking', '--max-new-tokens', '64'
 )
 ```
 
@@ -65,7 +65,7 @@ The screen uses stderr and requires terminal stdin and stderr. Rendering, keyboa
 
 Cancellation remains cooperative. An executing GPU kernel cannot be preempted. The session waits for the active work to wind down before starting another request. See [cooperative cancellation](cancellation.md) and [async terminal work](async-terminal-ui.md).
 
-The final Windows ConPTY check displayed Julia's selected `heal` choice using ONNX CUDA with explicitly permitted mixed placement. A Unicode prompt followed by Ctrl+C cancelled the request while keeping the interface open; Ctrl+Q then exited with status zero. The input console mode matched its original value, stdout contained zero bytes and the independent NDJSON capture retained 18 log records. This qualifies the observed input, output and controlled cleanup path in that terminal.
+The earlier qualified release's Windows ConPTY check displayed Julia's selected `heal` choice using ONNX CUDA with explicitly permitted mixed placement. A Unicode prompt followed by Ctrl+C cancelled the request while keeping the interface open; Ctrl+Q then exited with status zero. The input console mode matched its original value, stdout contained zero bytes and the independent NDJSON capture retained 18 log records. This qualifies the observed input, output and controlled cleanup path in that terminal.
 
 ## Configure finite choices explicitly
 
@@ -73,7 +73,7 @@ Enable Julia decision mode with an explicit provider and artifact directory:
 
 ```powershell
 teamy-llm interactive --model qwen3.8-27b-uncensored-q4-k-m `
-  --max-new-tokens 64 `
+  --context-tokens 8192 --max-new-tokens 64 `
   --decision-provider native --decision-model-dir ./models/julia `
   --device cuda --max-tokens 1024 --head-tokens 256
 ```
@@ -82,13 +82,17 @@ For ONNX, select `--decision-provider onnx` and supply `--runtime-library ./runt
 
 Decision mode accepts the same version 1 request JSON as [score supplied choices](finite-choice-models.md). It returns ordered option scores and a selected ID. It does not execute the selected choice. Julia accepts 2 to 20 text options; images are rejected before tokenizer or numerical artifact reads.
 
+Julia's `--max-tokens` and `--head-tokens` govern its encoding policy. They are separate from the generation session's `--context-tokens` and output bound; a shared interface does not make those budgets interchangeable.
+
 ## Separate model residency from conversation history
 
-Repeated requests within one mode retain the worker and its numerical runtime. Prompt turns are independent: the visible transcript does not become the next model input. The OrcaRouter adapter still has a 1,024-token context for the formatted prompt plus requested output. Lower the output limit for longer inputs.
+Repeated requests within one mode retain the worker and its numerical runtime. Prompt turns are independent: the visible transcript does not become the next model input. The Orca GGUF session defaults to 8,192 tokens for the formatted prompt plus requested output. `--context-tokens` selects 128 through 32,768; the session's capacity and model selection remain fixed while it is open. Lower the output limit for longer inputs. The older Burn provider retains its own context contract and rejects this explicit override.
 
-Cold loading verifies the frozen GGUF identity and prepares its GPU session. A resident request reuses that session and the unchanged tokenizer instead of repeating those cold steps. Reuse is scoped to the owned process; exiting the CLI ends it. See [local text generation](local-text-generation.md) for artifact identity checks and measured loading costs.
+Cold loading verifies the frozen GGUF identity and prepares its GPU session. A resident request reuses that session and the unchanged tokenizer instead of repeating those cold steps. Interactive reuse is scoped to its owned worker; exiting the CLI ends it. For separate client processes, use the explicit [prewarmed local service](local-text-generation.md#keep-a-model-resident-for-fresh-clients) with `prompt --address`. Interactive mode does not automatically attach to that service.
 
-This does not fix Windows memory mapping. The pinned Makepad loader's non-Unix implementation reports mapping as unavailable and uses an owned weight arena. Retaining an already loaded session avoids another load within that mode; it does not remove first-load hashing, disk staging or device preparation. See [the Windows mmap explanation](local-text-generation.md#understand-the-windows-mmap-message).
+The historical release used Makepad's Windows owned-arena fallback. The newer local loader adds read-only Windows file mapping while retaining our adapter's full identity verification. Residency and mapping address different work: retaining a session avoids reconstructing it, while mapping changes its initial host-weight loading path. Neither removes first-load hashing or GPU session preparation. See [the Windows mmap explanation](local-text-generation.md#understand-the-windows-mmap-message).
+
+The newer [fresh-client capture](local-text-generation.md#local-candidate-measurement-fresh-clients-and-mapped-loading) reached visible text in about 320 to 500 ms for three short requests against a prewarmed 8,192-capacity service. Its fresh local model load still took about 18.1 seconds to visible text. Those are external process-start clocks, distinct from the interactive submission clocks below; the service's initial warmup is excluded from its client times.
 
 Switching between prompt and decision modes replaces the owned worker process. Dropping a provider alone does not guarantee that Burn or CubeCL releases allocator-held GPU memory. The process boundary releases that mode's residency before loading the other model. Returning to a mode therefore includes another cold load. Work remains sequential.
 
@@ -127,7 +131,7 @@ The outer action uses `prompt` or `decide` as its tag. `request-json` is a JSON 
 
 ```powershell
 teamy-llm interactive --model qwen3.8-27b-uncensored-q4-k-m `
-  --no-thinking --max-new-tokens 64 `
+  --context-tokens 8192 --no-thinking --max-new-tokens 64 `
   --decision-provider native --decision-model-dir ./models/julia --device cuda `
   --script ./sessions/repeat.json
 ```
@@ -172,11 +176,11 @@ Session timing uses these explicit boundaries:
 
 These are separate measurements, not durations to add together. The first action's parent clock starts after the initial worker handshake. A process-start measurement must also include that handshake and CLI setup. The TUI currently starts its live busy timer after submission and reports worker duration on completion; script timings are the clearer comparison interface.
 
-For repeated generation measurements without a screen, `benchmark` also uses one service instance. Its typed reports default to text on a terminal and JSON when redirected; `--output-format json` selects JSON explicitly. Read [performance analysis](performance-analysis.md) before comparing cold loading, first-token time and completed inference.
+For repeated generation measurements without a screen, `benchmark` also uses one service instance and accepts `--context-tokens`. Its typed reports default to text on a terminal and JSON when redirected; `--output-format json` selects JSON explicitly. A separate fresh-client measurement uses `prompt --address`, including its own input and connection time. Read [performance analysis](performance-analysis.md) before comparing cold loading, first-token time and completed inference.
 
 ## Observe cold loading and resident generation
 
-Source revision `8cc6e279682ac615512060a43cc058391c05373f`, executable SHA-256 `45c5edefebd00f47461090437395fc1870212c334a3b6d3bb38a824aae71996f`, completed a 13-action mixed session on an RTX 4090. It began with three identical “Why is the sky blue?” requests and a 32-token output bound. One owned worker handled those first three prompts. Debug stderr capture and parent NDJSON logging were enabled; no Cargo build or other inference run overlapped the capture.
+This historical capture used the earlier 1,024-token generation capacity and Windows owned-arena fallback. Source revision `8cc6e279682ac615512060a43cc058391c05373f`, executable SHA-256 `45c5edefebd00f47461090437395fc1870212c334a3b6d3bb38a824aae71996f`, completed a 13-action mixed session on an RTX 4090. It began with three identical “Why is the sky blue?” requests and a 32-token output bound. One owned worker handled those first three prompts. Debug stderr capture and parent NDJSON logging were enabled; no Cargo build or other inference run overlapped the capture.
 
 | Request | Parent time to first token event, ms | Parent time to completed reply, ms |
 | --- | ---: | ---: |
@@ -185,7 +189,7 @@ Source revision `8cc6e279682ac615512060a43cc058391c05373f`, executable SHA-256 `
 | Resident request 3 | 193.52 | 847.90 |
 | Return to prompt after decision mode, cold model | 21,993.66 | 22,650.24 |
 
-The generated token-ID arrays matched exactly across the initial three prompts and the final return to prompt mode. Weight identity verification, tokenizer loading and GPU session preparation each occurred once per prompt worker. Residency avoided repeating those loading steps within a mode; it did not remove the first load or add Windows memory mapping.
+The generated token-ID arrays matched exactly across the initial three prompts and the final return to prompt mode. Weight identity verification, tokenizer loading and GPU session preparation each occurred once per prompt worker. Residency avoided repeating those loading steps within a mode. This capture predates the local Windows mapping addition and does not measure its effect.
 
 The decision portion used ONNX CUDA with explicitly permitted mixed graph placement. All six Julia reference cases preserved option order, selected IDs, question and encoding policy, and met the original score tolerances. The first decision loaded its provider; the following successful decisions reported `load-ms: 0`. Exact encoding was independently checked by the separate 24 batch cases across native CPU/CUDA and ONNX CPU/mixed CUDA. The resident session checked scores and fixed policy; these short fixtures do not establish 1,024-token performance.
 
@@ -193,13 +197,13 @@ A malformed decision returned a shaped error in 0.21 ms. A later decision reques
 
 The initial sequence contains two resident timing samples, not a latency distribution. Timings use the parent's script clock after the initial worker handshake and include event transport. The first event can contain empty text; these are not pure decoder or first-visible-text timings. Matching prompt token IDs establish repeatability for this sample, rather than independent generation numerical parity or general answer quality. The final display-only release is identified below; it is distinct from this capture.
 
-In an earlier prompt-only capture, executable SHA-256 `bd536fe08b2d00f25002dfeab41f7bfb74f1f485937195f04891871f8d03d485` returned a shaped cancelled prompt after 18.87 ms when cancellation was requested after 5 ms. Its following Unicode “café” prompt completed 32 generated tokens, with a first-token event at 250.64 ms and completed reply at 902.38 ms. That earlier recovery capture and the [tokenizer-cache experiment](local-text-generation.md#local-release-measurement-tokenizer-reuse) used separate executables and workloads.
+In an earlier prompt-only capture at 1,024-token capacity, executable SHA-256 `bd536fe08b2d00f25002dfeab41f7bfb74f1f485937195f04891871f8d03d485` returned a shaped cancelled prompt after 18.87 ms when cancellation was requested after 5 ms. Its following Unicode “café” prompt completed 32 generated tokens, with a first-token event at 250.64 ms and completed reply at 902.38 ms. That earlier recovery capture and the [tokenizer-cache experiment](local-text-generation.md#local-release-measurement-tokenizer-reuse) used separate executables and workloads.
 
 ## Inspect the implementation behind the interface
 
-The final local source revision `14ce5f54b991711f03ec6239e410e5418dcb33f5` passed 62 CLI unit tests, 25 service unit tests, strict Clippy and 73 model-free subprocess checks. Its Windows executable's SHA-256 is `901540128871bd35cca6bb32dc8468932d6621b052e3a69e12589bd52125e68d`. The final changes affect three display files: interactive human logs omit ANSI styling and the chosen option remains visible in a two-line results pane. Normal CLI colour output is retained; the numerical engine is unchanged from the mixed-session capture.
+The earlier qualified local source revision `14ce5f54b991711f03ec6239e410e5418dcb33f5` passed 62 CLI unit tests, 25 service unit tests, strict Clippy and 73 model-free subprocess checks. Its Windows executable's SHA-256 is `901540128871bd35cca6bb32dc8468932d6621b052e3a69e12589bd52125e68d`. Its final changes affect three display files: interactive human logs omit ANSI styling and the chosen option remains visible in a two-line results pane. Normal CLI colour output is retained; its numerical engine is unchanged from the mixed-session capture.
 
-The installed executable matches that qualified build's hash. Installing it retained the previously registered legacy model as the effective default; selecting Orca remains explicit unless you set a new preference.
+At that capture, the installed executable matched the qualified build's hash. Installing it retained the previously registered legacy model as the effective default; selecting Orca remains explicit unless you set a new preference. Later context, IPC and loader changes need matching build and qualification records rather than inheriting this release's measurements.
 
 The process checks cover command parsing, generated help, invalid-input failures, isolated model preferences and typed output. They do not establish GPU speed or answer quality. Hardware and transport changes require their own input, timing and runtime evidence.
 
