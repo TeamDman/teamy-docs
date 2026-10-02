@@ -84,6 +84,12 @@ Avoid a cancellation check between completing a filesystem change and recording 
 
 The local mover prototype currently checks cancellation before dispatch. Its planning methods do not yet receive the token through their internal loops. The template checks command and output boundaries. The locator checks discovery and author walks, while its synchronous published-index query cannot be interrupted through this token. These limits matter when describing responsiveness.
 
+## Restore an interactive terminal
+
+An interactive application must handle cancellation while waiting for input and while work runs. In raw mode, Ctrl+C may arrive as a keyboard event rather than the usual console signal; route the event to the intended request or application token and explain its scope in on-screen help.
+
+After cooperative work stops, restore terminal modes and screen state before printing a final error or releasing ownership to a parent interface. Restoration failure is an unrecoverable error; a nested owner must not acknowledge a safe handoff when cleanup failed. Cloud-Terrastodon's [terminal ownership protocol](terminal-ownership.md#transfer-ownership-after-restoration) and [async input/work separation](async-terminal-ui.md) are our implementation references. A token cannot preempt an executing GPU kernel or automatically interrupt a blocking stdin read.
+
 ## Keep completed outcomes typed
 
 A completed lookup can report no matching item or exclusion by policy. Put those findings in a typed report and return exit status 0 under this CLI convention. An unrecoverable `eyre` error returns a nonzero status.

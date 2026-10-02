@@ -75,6 +75,8 @@ File-creation errors propagate through `eyre`. If installing the global subscrib
 
 Choose the mechanism for the behavior required. Retaining logs for a screen, batching disk writes and delivering logs from another process solve different problems.
 
+For an active Ratatui screen, read [terminal ownership and guarded logging](terminal-ownership.md#buffer-human-logs-while-the-screen-is-active). Cloud-Terrastodon routes human tracing events into structured memory records while a terminal owner is active, then presents or replays them; its NDJSON layer stays independent. Stdout and stderr can reach the same PTY, so putting logs on stderr alone does not protect a stdout TUI. This coordinator and buffer are reference capabilities, not additions already supplied by the CLI template.
+
 | Mechanism | What it provides | Reference or status |
 | --- | --- | --- |
 | Memory replay | Keep prior messages so an interactive view can show them later. | Piing and MFT examples below. |

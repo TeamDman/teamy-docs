@@ -2,6 +2,8 @@
 
 Choose the terminal task first. Hosting an interactive program, interpreting its output and sharing an existing terminal require different machinery. Our prior art is Teamy-Studio for a PTY and terminal engine, and Cloud-Terrastodon for cooperative TUI ownership.
 
+To draw widgets in the current terminal, start with [interactive terminal interfaces](terminal-interfaces.md). [Terminal ownership and logs](terminal-ownership.md) explains nested picker handoffs and tracing output; [async terminal work](async-terminal-ui.md) keeps input and rendering responsive. Those are separate from the PTY and terminal-emulation implementation below.
+
 | Need | Start with |
 | --- | --- |
 | Host an interactive shell in a native window | Teamy-Studio's PTY session, terminal core and engine. |

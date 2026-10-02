@@ -14,6 +14,9 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Explain startup delay, find CPU hotspots or measure completed GPU work | [Understand performance](performance-analysis.md) | Template spans, teamy-profiler's Cargo harness and CPU capture decoder. |
 | Stop work safely | [Cooperative cancellation](cancellation.md) | teamy-cancellation and consuming CLIs. |
 | Return results to scripts and people | [Typed results and errors](output-shape.md) | The template and the local mover prototype. |
+| Add a TUI, picker or interactive prompt | [Interactive terminal interfaces](terminal-interfaces.md) | Ratatui, Cloud-Terrastodon's pick/browser, teamy-tts and Ollama; K9s navigation reference. |
+| Stop tracing logs from overwriting a TUI, or open a nested picker | [Terminal ownership and logs](terminal-ownership.md) | Cloud-Terrastodon's coordinator, suspension acknowledgements and structured terminal log buffer. |
+| Keep keyboard input responsive while inference or searches run | [Async terminal work](async-terminal-ui.md) | Cloud-Terrastodon's EventStream, generation-tagged candidate handlers and engine/UI separation. |
 
 ## Desktop applications
 
@@ -50,7 +53,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 ## Keep the prior art useful
 
-Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `screenshot`, `UI Automation`, `GPU inference`, `Python ML`, `PTY`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
+Use book search with the operation you want: `EXE icon`, `message box`, `tray icon`, `screenshot`, `UI Automation`, `GPU inference`, `Python ML`, `PTY`, `TUI`, `Ratatui`, `interactive prompt`, `terminal ownership`, `argument parsing`, `find source` or `plan moves`. Each topic should connect an intent to code and then to related decisions. If a capability is missing from the template, say so rather than implying every CLI already has it.
 
 [Curate prior art](curating-prior-art.md) explains how we turn existing projects and GitHub stars into recommendations. A source snapshot, a tested outcome and a research candidate have different evidence. Keep those differences visible.
 
