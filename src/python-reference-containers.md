@@ -2,7 +2,23 @@
 
 Use a pinned Python environment to produce independent fixtures for a [Rust model implementation](python-ml-to-rust.md). Keep the reference code, weights and test inputs identifiable. Mount only those inputs and a dedicated output folder.
 
-This is a proposed Podman and uv recipe. Its command syntax has been reviewed; no image was built and no GPU reference was run during this documentation work. The model-specific `reference.py`, dependency lock and image digests must still be prepared and validated. A passing [synthetic finite-choice example](finite-choice-models.md) does not establish Python or model parity.
+The general runner below remains a proposed recipe. A local Julia-specific harness has now built a pinned Linux AMD64 image and produced independent CPU and CUDA fixtures after a verified GPU setup. A passing [synthetic finite-choice example](finite-choice-models.md) does not establish Python or model parity.
+
+## Completed Julia CPU and CUDA references
+
+The local `python/julia-reference` harness imports the pinned publisher's `JuliaDecisionModel`, strict `sequence` encoder and `Collator`. It bypasses the optional router, Bend bridge, compilation and INT8 paths. Native source and weights use [Julia-1 revision `a85b127`](https://huggingface.co/SupersonicLabs/Julia-1/tree/a85b127321d580d65176c89ced8273f305745d85); the separately acquired graph uses [ONNX revision `82a2fad`](https://huggingface.co/SupersonicLabs/Julia-1-ONNX/tree/82a2fadf8fccfccdc5fd4e1009ba8f1a265eb7a8). Source and artifact checksums are verified before model loading.
+
+The frozen environment uses Python 3.12.15, uv 0.11.26, Torch 2.11.0+cu128, Transformers 5.0.0, tokenizers 0.22.2 and safetensors 0.7.0. The image bases are pinned by digest and transitive dependencies by `uv.lock`. Julia's [published dependency range](https://huggingface.co/SupersonicLabs/Julia-1/blob/a85b127321d580d65176c89ced8273f305745d85/pyproject.toml) requires Transformers `>=5.0,<5.1`; a different model's reference environment must not be reused unchanged merely because it already contains Torch.
+
+Six synthetic text-only cases cover 2, 3, 5, 20, 4 and 2 ordered choices, Unicode text, an explicit question override and identical descriptions with distinct IDs. Defaults are the question `Which option should be chosen?`, 1024 total tokens and 256 head tokens. Each output preserves raw and padded token IDs, masks, marker positions, option IDs, logits, unit-temperature probabilities, selected IDs, intermediate marker vectors and input/environment digests.
+
+Two CPU runs and two CUDA runs used float32, math SDPA, no autocast or TF32, seed 42 and deterministic-operation checks. Within each device's run pair, tokens, intermediate vectors, logits, probabilities and selected IDs matched exactly. Across CPU and CUDA, all six cases preserved exact encoding, option order and selected IDs, and passed the previously declared score tolerances: logits absolute/relative `1e-4`; probabilities absolute `1e-5`, relative `1e-4`. The comparison uses `abs(actual - expected) <= absolute + relative * abs(expected)`.
+
+The CUDA reference ran on an RTX 4090 with Windows driver 610.88 through Podman's WSL2 machine. The guest received `nvidia-container-toolkit-base`, `libnvidia-container1` and `libnvidia-container-tools`, each version `1.20.1-1.x86_64`. Public RPM bytes independently matched their recorded official metadata SHA512 checksums; installed package-file verification reported no differences. The reviewed official repository configuration verifies signed repository metadata but disables package OpenPGP checks. WSL generated only `nvidia.com/gpu=all`; the non-root container probe verified that this selector exposed exactly one CUDA device. It is not a per-card isolation claim.
+
+Eight model-free contract tests also passed. These results establish repeatability and cross-device numerical agreement for this pinned publisher reference. They do not establish native Rust or ONNX parity, calibrated confidence, a speed advantage or compatibility on other machines. Intermediate-vector capture adds work, so its timings are diagnostic evidence rather than an optimized benchmark. See [performance analysis](performance-analysis.md).
+
+The runs used an offline, read-only, non-root container with dropped capabilities, read-only model inputs and a dedicated writable output folder. No host home, credential or engine socket was mounted, and no host-environment access was added. The approved setup changed guest packages and its CDI specification; it changed no Windows driver or host toolkit. Requested CUDA fails when unavailable; selecting CPU is explicit. The local model harness and fixtures are not yet a published product API.
 
 ## Establish GPU access before model execution
 

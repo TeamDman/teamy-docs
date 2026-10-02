@@ -8,6 +8,7 @@
   - [Command-line tools](good-cli.md)
     - [Argument parsing](cli-parsing.md)
     - [Logging with tracing](logging.md)
+    - [Understand performance](performance-analysis.md)
     - [Cooperative cancellation](cancellation.md)
     - [CLI output shapes](output-shape.md)
   - [Desktop applications](desktop-applications.md)

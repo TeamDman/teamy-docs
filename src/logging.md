@@ -2,6 +2,8 @@
 
 Use the logging setup provided by [teamy-rust-cli](rust-cli-template.md). Emit structured events and spans through `tracing`; let `tracing-subscriber` filter them and send them to the terminal, a file or a profiler. Keep command results on stdout and operational communication on stderr, even when the result format is JSON.
 
+For startup delays, CPU hotspots and completed GPU-work timing, read [performance analysis](performance-analysis.md). It connects these spans to the capture harness and explains what its CPU summaries can establish.
+
 [TeamDman's earlier Windows terminal-colour answer](https://stackoverflow.com/a/78741674) enables virtual terminal processing on `STD_OUTPUT_HANDLE`. It is historical prior art, not proof that stderr has the same mode. Check terminal detection and ANSI support separately for each writer; redirected logs should follow their declared output format. The [authored-answer index](stackoverflow-prior-art.md) records the answer's inspection status.
 
 The template baseline below is public revision [`7e62d72`](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/src/logging_init.rs), checked on 1 October 2026. Later local changes are identified explicitly. The reference projects demonstrate capabilities to reuse when needed; copying the template alone does not add their buffering or cross-process behavior.
