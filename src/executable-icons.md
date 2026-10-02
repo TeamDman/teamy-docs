@@ -1,4 +1,4 @@
-# Reuse the executable's icon
+# Reuse or extract an executable's icon
 
 Use the icon already embedded in a Windows executable when the interface needs the same artwork. The Rust CLI template embeds `resources/main.ico`; tb loads that resource for its tray. The same artwork can also be assigned to a window explicitly. This avoids another `include_bytes!` embedding for native consumers.
 
@@ -59,6 +59,21 @@ This source needs adaptation before treating it as a general decoder:
 - the browser truncates paths to 259 UTF-16 units and uses [PrivateExtractIconsW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-privateextracticonsw), which Microsoft says is unsuitable for general use
 
 Correct the selection contract and validate representative formats, transparency and full input paths when adopting it. A successful color-icon example does not establish those cases.
+
+## Extract an EXE icon to the format you need
+
+Treat extraction and image encoding as separate steps. An `HICON` is a Windows object; an RGBA buffer is pixel data; PNG or JPEG is an encoded file.
+
+1. Choose the EXE or DLL, icon index and required dimensions. [`ExtractIconExW`](https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-extracticonexw) returns large and small icon handles. These are selected images, not every image in the original icon resource.
+2. Convert the selected valid handle to RGBA pixels. Use the `teamy-windows` converter above as prior art, after addressing its documented adoption gaps.
+3. Choose the output encoder and its colour requirements. The `image` crate's [`save_with_format`](https://docs.rs/image/0.25.9/image/struct.ImageBuffer.html#method.save_with_format) selects a format explicitly; `save` derives it from the extension. Check that [encoding is enabled](https://docs.rs/image/0.25.9/image/enum.ImageFormat.html#method.writing_enabled) and handle encoder errors.
+4. Save the image and release owned icons after their last consumer. Check the resulting dimensions, colours and transparency in an independent viewer.
+
+PNG is a useful starting point for transparent artwork. For a format without alpha, choose a background and composite onto it before encoding. Exporting one raster image does not reconstruct a multi-size `.ico` resource or produce an SVG.
+
+[TeamDman's answer on extracting EXE icons in Rust](https://stackoverflow.com/a/78190249) provides earlier prior art for this pipeline. It links [Cursor-Hero's extraction and conversion at `5161138`](https://github.com/TeamDman/Cursor-Hero/blob/51611380997d74f74f76fa776be4892a9906c005/crates/winutils/src/win_icons.rs), with a PNG-saving example. Its manual cleanup and permissive error handling need review before reuse. The current `teamy-windows` source is another implementation to inspect; neither establishes a validated general-purpose export command in the CLI template.
+
+The [Stack Overflow topic index](stackoverflow-prior-art.md) records other public answers without treating them as implemented book features.
 
 ## Preserve ownership through the last consumer
 

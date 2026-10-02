@@ -1,28 +1,31 @@
 # Reuse Makepad's inference patterns
 
-Makepad has informed the direction of our Rust inference work. Treat it as prior art for gaining control of execution, then record the concrete pattern we adopt and how we validate it. Inspiration, a dependency and copied code have different provenance.
+Study Makepad when we need control of model operations, device memory and a resident inference session. Its LLM implementation provides concrete prior art for those goals. Adopting a pattern does not require adopting its GUI framework. Compare it with [our GPU strategies](gpu-inference.md) before choosing an integration boundary.
 
-The inspected Teamy speech-tool manifests do not declare Makepad as a dependency. The transcriber's [public implementation ledger](https://github.com/TeamDman/teamy-transcriber/blob/d87d5020d0a2c3847c5fa461d9bd9de39901b52e/PLAN.md#L42) identifies burnt-apple's Burn frontend and model loader as the original native Whisper reference. Preserve that recorded lineage alongside Makepad's role as inspiration and a study reference.
+This chapter was reviewed on 1 October 2026 against public Makepad revision [`3b1be702`](https://github.com/makepad/makepad/tree/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1), committed on 25 September 2026. That is the source snapshot date, not a benchmark date or a claim that every inference component changed that day.
 
-## Study the decisions in code
+## Understand the LLM execution path
 
-Makepad's public revision `8e82a8e` gives us concrete implementation references:
+`makepad-ai-llm` loads GGUF model metadata, tokenizer data and weights. Rust builds its own execution graphs and binds them to Metal on macOS/iOS or CUDA on Windows/Linux. It controls graph planning, caches, buffers and token decoding; CUDA kernels and GPU libraries still perform numerical work. This is a source-defined graph runtime, distinct from handing an exported ONNX graph to ONNX Runtime. See the [model crate](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/Cargo.toml#L1-L19) and [execution seam](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/exec.rs#L1-L18).
 
-| Problem | Makepad's approach | What to inspect |
-| --- | --- | --- |
-| Select acceleration that is actually available | Attempt Metal or CUDA operations and otherwise use the CPU implementation. Distinguish build-time kernels from runtime devices. | [Acceleration dispatch](https://github.com/makepad/makepad/blob/8e82a8e695af39c582fde30e37e888f375b31d1a/libs/ai/models/speech/src/whisper/accel.rs#L1). |
-| Avoid transfer and dispatch overhead | Keep dequantized weights resident and cache cross-attention data; small operations can still favor the CPU. | [CUDA backend rationale](https://github.com/makepad/makepad/blob/8e82a8e695af39c582fde30e37e888f375b31d1a/libs/ai/models/speech/src/whisper/cuda/backend.rs#L1). |
-| Prevent stale cache reuse | Use a content fingerprint when a host allocation can be recycled. | Weight-cache identity in the same CUDA backend. |
-| Make precision a deliberate choice | Use dequantized FP32 weights and FP32 matrix operations to stay close to a CPU reference. | Precision commentary in the same backend. |
+The session exposes separate stages: parse, vocabulary and plan construction, weight mapping or reading, device initialization, cache allocation, memory reservation, upload and graph preparation. CUDA uploads the weight region once; Metal can wrap the host arena. Prompt tokens then enter batched prefill, followed by repeated token selection and decoding to text. See [session preparation](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/session.rs#L3725-L3888), [device buffers](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/exec.rs#L148-L165) and [generation](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/session.rs#L1301-L1330).
 
-These choices explain why “move everything to the GPU” is insufficient. The speed of an operation includes its transfers, dispatch and cache behavior. A cache also needs a reliable identity, not just a remembered pointer.
+Its in-process chat worker creates and keeps the session on one thread. Appended turns reuse conversation state. Loading progress, readiness and generated events reach the consumer through channels; cancellation is checked between generated tokens. Those channels are unbounded, so copy the ownership pattern only with an explicit queue policy for our service. See [worker ownership and channels](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/hub/src/local_llm.rs#L1-L14), [startup](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/hub/src/local_llm.rs#L135-L171) and [token cancellation](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/hub/src/local_llm.rs#L441-L475).
 
-The newer native transcriber branch defaults to TF32 computation with FP32 storage. That differs from Makepad's cited precision choice. Neither establishes a universal winner; compare correctness and latency for the actual model and device. See [our GPU inference references](gpu-inference.md).
+## Distinguish vision and fallback capabilities
 
-## Bring the pattern into our tools
+The separate Qwen-VL vision tower loads an `mmproj` GGUF, preprocesses RGB pixels and produces image embeddings for LLM prefill. Supported text-and-image inputs can therefore lead to generated text. The cited LLM path does not generate images. This does not add vision to a text-only model such as Julia; it requires a compatible vision tower, projector and language model. See [vision preprocessing](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/vision.rs#L1-L24) and [embedding injection](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/session.rs#L1787-L1813).
 
-Keep a reference path, expose backend capability, state precision and measure the complete operation. Reuse the decision that solves our problem, with an explicit link to our implementation and its evidence.
+Fallback belongs to a particular path:
 
-Our speech tools demonstrate resident runtimes, inspectable model operations and stricter validation of optimized paths. [Python-to-Rust porting](python-ml-to-rust.md) connects those steps to preprocessing and output parity. [GPU inference](gpu-inference.md#measure-speed-together-with-correctness) distinguishes cold loading, first output, warm inference and complete application time.
+| Path | Observed behavior |
+| --- | --- |
+| LLM execution | Missing native backend, kernels or memory produces an error; there is no CPU or cross-backend fallback. [Backend selection](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/exec.rs#L71-L94). |
+| Vision tower | Unpinned selection tries CUDA, then Metal; explicitly pinning a backend makes its failure an error. [Selection](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/vision.rs#L426-L469). |
+| Whisper primitives | An unavailable accelerator returns control to the caller's CPU implementation. [Dispatch](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/models/speech/src/whisper/accel.rs#L1-L25). |
 
-Makepad's comments explain its rationale; they are not benchmark receipts for our tools. Claims that an adopted pattern accelerated TTS or transcription should link the measured workload and correctness result. Record an unmeasured benefit as a design reason until those measurements exist.
+## Separate compilation from preparation
+
+Makepad's CUDA build invokes `nvcc` and archives kernel objects. Runtime graph preparation and CUDA graph capture are additional stages. A failed capture can retain eager CUDA dispatch; that is not CPU fallback. Metal supports precompiled shaders and runtime source compilation when precompilation is unavailable. See [CUDA build](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/cuda/build.rs#L229-L372), [capture handling](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/llm/src/cuda_exec/real.rs#L2402-L2405) and [Metal build](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/libs/ai/metal/build.rs#L106-L153).
+
+The inspected Teamy speech manifests do not declare Makepad as a dependency. The transcriber's [implementation ledger](https://github.com/TeamDman/teamy-transcriber/blob/d87d5020d0a2c3847c5fa461d9bd9de39901b52e/PLAN.md#L42) records burnt-apple's Burn frontend and loader as its original native Whisper reference. Preserve both that lineage and Makepad's role as study material. Source comments explain design choices; acceptance needs our own [parity and performance evidence](gpu-inference.md#measure-speed-together-with-correctness).

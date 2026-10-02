@@ -42,7 +42,7 @@ Use [typed result conventions](output-shape.md) for completed findings. Define r
 
 ## Build a terminal service around one reusable runtime
 
-Start with the smallest compatible adapter. An existing graph may support a Rust wrapper before a complete rewrite of its numerical operations. State CPU and GPU support explicitly. Adding an adapter does not create fallback support in an existing GPU-only backend.
+Follow [the documented GPU direction](gpu-inference.md): Rust-owned numerical operations and native execution serve our control goals. Preserve its model and device limits. A proposed new backend comparison needs user confirmation; the Julia native/ONNX comparison is already approved. An existing graph can provide a bounded comparison adapter. State CPU and GPU support explicitly; adding an adapter does not create fallback in a GPU-only backend.
 
 Keep the loaded model resident between requests. Report readiness after required loading and warmup, then expose typed requests and results through a documented local protocol. Define endpoint access, bounded queues, request IDs, progress, shutdown and model replacement. A local endpoint still needs an access policy.
 
@@ -72,6 +72,8 @@ Schema and policy tests must work with the model absent. Test malformed input, u
 
 Freeze the reference code, model artifacts and test inputs. Compare token IDs and preprocessing first, then intermediate tensors where observable, then final outputs. Record tolerances before accepting an optimization. Test ties, overflow, invalid inputs and representative task cases.
 
+[Containerized Python references](python-reference-containers.md) provide a proposed Podman/uv/Torch recipe for producing independent fixtures. Pin the image and dependencies, verify the intended GPU and keep acquisition separate from offline reference execution. The recipe still requires model-specific preparation and execution validation.
+
 Keep the reference independent of the implementation under test. Agreement between two wrappers around the same faulty path is weak evidence. Preserve failed comparisons. Finite output, stable length, numerical parity and task accuracy are different checks.
 
 Record cold loading, first useful result, resident inference and complete application time separately. Include peak memory, request size, concurrency, device, runtime/provider versions and precision. Performance claims need the workload and correctness result beside them. [GPU inference](gpu-inference.md#measure-speed-together-with-correctness) describes our existing evidence limits.
@@ -90,7 +92,7 @@ The publisher describes [Julia 1 at revision `a85b127`](https://huggingface.co/S
 
 Its separate [ONNX and WebGPU release at `82a2fad`](https://huggingface.co/SupersonicLabs/Julia-1-ONNX/blob/82a2fadf8fccfccdc5fd4e1009ba8f1a265eb7a8/README.md) includes Rust WebAssembly and N-API tokenizer source. That tokenizer does not establish an existing native Rust inference service.
 
-A proposed first slice is an explicit finite-choice adapter around the graph, with CPU/reference fixtures before GPU optimization. [The Rust `ort` binding](https://github.com/pykeio/ort) and [ONNX Runtime's C API](https://onnxruntime.ai/docs/get-started/with-c.html) are implementation candidates. The binding runs ONNX Runtime's C/C++ library: this removes Python from product inference without making the numerical implementation entirely Rust. Pin and verify the chosen runtime, graph operators and external weight files together. Julia has not been run or validated as part of this documentation work.
+The first slice is the tested finite-choice contract, followed by independent reference fixtures and native/ONNX adapters before GPU optimization. [The Rust `ort` binding](https://github.com/pykeio/ort) and [ONNX Runtime's C API](https://onnxruntime.ai/docs/get-started/with-c.html) are implementation candidates. The binding runs ONNX Runtime's C/C++ library: this removes Python from product inference without making the numerical implementation entirely Rust. Pin and verify the chosen runtime, graph operators and external weight files together. Julia has not been run or validated as part of this documentation work.
 
 ## Join parallel work at explicit checkpoints
 

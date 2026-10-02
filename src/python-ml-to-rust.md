@@ -30,6 +30,8 @@ Use a sequence that makes divergence easy to locate:
 4. Compare complete output and document numerical tolerances.
 5. Optimize measured costs while keeping those checks.
 
+Use [containerized Python references](python-reference-containers.md) to prepare a pinned independent runner with uv, Torch and an explicitly verified GPU. Its proposed Podman recipe separates artifact acquisition from offline fixture generation and records the environment alongside tokens and tensors.
+
 Whisper's input begins before its first learned layer. The main transcriber's frontend implements padding, Fourier transforms, mel filters and log normalization. A sine-wave regression compares Python reference values. See [the frontend test](https://github.com/TeamDman/teamy-transcriber/blob/d87d5020d0a2c3847c5fa461d9bd9de39901b52e/src/native_whisper/frontend.rs#L232). The newer native branch [supports 80 and 128 mel bins and retains an FFT plan](https://github.com/TeamDman/teamy-transcriber/blob/7d1ec222639d67056e18f233cd017a359008306b/native/src/frontend.rs#L1).
 
 For TTS, dictionary lookup, phoneme inventory, neural fallback, speaker embeddings, acoustic model and vocoder form one pipeline. Python can remain an artifact-export and independent-reference tool while the product runtime uses Rust. See [TTS artifact preparation](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552a851c467a9a19dcce3/native/README.md#L25).
