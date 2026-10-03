@@ -32,9 +32,29 @@ The [resident-service example](local-text-generation.md#keep-a-model-resident-fo
 
 Record initial server loading and client response time separately. A newly launched process is not necessarily a cold disk-cache experiment, and a ready server is not a cold model. Include process launch, CLI setup, stdin acquisition and connection establishment when measuring the user's wait from launching a fresh client. None of the earlier resident measurements establishes subsecond cold startup.
 
-The prompt command logs both `first generated token` and `first visible model text`. The first event may contain empty or whitespace text; the visible-text event identifies usable decoded text. Both clocks start inside the command handler before prompt input and connection work, rather than at operating-system process launch. With text output, the visible event follows its stdout write and flush. With JSON output, it records text readiness; the structured result is written only after completion. A terminal display or external process-start measurement has a different boundary.
+The prompt command logs both `first generated token` and `first visible model text`. The first event may contain empty or whitespace text; the visible-text event identifies usable decoded text. Both clocks start inside the command handler before prompt input and connection work, rather than at operating-system process launch. In local service revision `78e933371f9cc13a6909cf8dfaf83b132e73baba`, both timing diagnostics precede the first visible text write, so they do not split the opening word from its answer. `streaming_to_stdout` describes the intended destination; the visible event measures readiness before logging, writing and flushing, rather than confirming delivery. Writer failures still propagate. With JSON output, the structured result is written only after completion. A terminal display or external process-start measurement has a different boundary. Grounding: `PromptObserver` and its shared-terminal-sink regression in `crates/teamy_llm_cli/src/cli/prompt/llm_prompt_cli.rs`.
 
 Compare the same model, rendered input, output bound, mode, context, logging settings and build. Retain successful token or score parity alongside the timings. Run loading and fresh-client experiments sequentially so another model or build cannot compete for the GPU during the capture.
+
+## Estimate the remaining startup gains
+
+Specify which cache is warm before choosing a target. These are different starting states for the unchanged Orca Q4_K_M model:
+
+| Starting state | Evidence or limit |
+| --- | --- |
+| Fresh process, empty GPU, uncontrolled Windows file cache | [Qualified historical first-text measurements](local-text-generation.md#local-release-measurement-five-second-fresh-startup): 4.62–4.76 seconds. |
+| Fresh process, weights absent from the OS file cache | Not measured separately. Storage must supply the model bytes; prior reads do not establish this boundary. |
+| Prepared weights retained in CPU RAM, empty GPU | Not measured separately. Parsing and some host preparation may be reused; GPU upload remains. |
+| Fresh client, model already on the GPU | The same five-second release's three prewarmed-service captures reached first visible text in 415.26, 345.16 and 342.57 milliseconds. Loading and server readiness happened earlier. |
+| Resident model plus reusable prompt-prefix state | No qualified latency result yet. Distinguish saved KV state from caching a completed answer. |
+
+The model contains 16,810,714,496 bytes; the captured initial upload arena contains 17,504,478,592 bytes including working state. For an RTX 4090 on PCIe Gen4 ×16, NVIDIA's rounded ideal bandwidth of 32 GB/s in one direction puts a transfer-only floor at approximately 0.53 seconds for the model and 0.55 seconds for that arena. These are optimistic calculations, excluding overhead, verification and inference. The bidirectional total is not upload bandwidth. See [RTX 4090 specifications](https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/) and [NVIDIA's PCIe bandwidth explanation](https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/).
+
+A 100-fold reduction from roughly 4.5 seconds would require roughly 45 milliseconds. Loading these bytes into an empty GPU over that link cannot meet it. CPU file-cache warmth can remove storage reads, but does not make weights GPU-resident. Keeping a loaded service changes the starting state and already produces a much larger improvement than a file-format change alone.
+
+The current mapped GGUF path already retains quantized tensor bytes. A prepared format could reduce metadata, vocabulary or allocation-plan construction; it would still need content verification and transfer. The next substantial experiment is to pipeline authenticated chunks through verification, pinned staging and completed upload, or avoid the mapped-to-pinned copy where Windows/CUDA supports it. Inference must wait for successful verification of the complete artifact, and cancellation/error cleanup must drain outstanding transfers. NVIDIA documents the benefits and costs of [pinned memory and asynchronous transfers](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#data-transfer-between-host-and-device).
+
+Around 2–3 seconds for a fresh process with RAM-cached weights and an empty GPU is a next engineering target, not a measured bound or guarantee. Measure that cache state separately before claiming it. Existing verification and upload spans support investigating this work; they do not prove the benefit of a pipeline that has not been implemented. Storage-cold performance also needs a storage measurement. Keep the original model, verification contract and numerical parity fixed when comparing candidates.
 
 ## Add useful spans before detailed events
 
