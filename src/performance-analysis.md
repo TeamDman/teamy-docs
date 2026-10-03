@@ -74,7 +74,7 @@ Runtime phase names alone do not identify repeated source compilation. The pinne
 
 ## Measure completed upload work
 
-The local Windows [two-slot pinned uploader](local-text-generation.md#stage-windows-uploads-with-bounded-pinned-memory) emits `cuda.upload` diagnostics with separate host, submission, completion and wall-clock fields:
+The local Windows [two-slot pinned uploader](local-text-generation.md#stage-windows-uploads-with-bounded-pinned-memory) now emits the debug-level tracing event `Initial CUDA arena upload completed`, with target `teamy_llm_makepad_gguf::cuda::upload`. Its host, submission, completion and wall-clock fields retain the same boundaries below. Historical captures used the raw `cuda.upload` stderr prefix; enable `--debug` or an explicit target filter for the newer [logging pipeline](logging.md#keep-runtime-diagnostics-in-the-logging-pipeline).
 
 | Field | Boundary |
 | --- | --- |

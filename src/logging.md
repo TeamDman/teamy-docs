@@ -71,6 +71,16 @@ Terminal and file layers use the same selected filter. A quiet terminal filter d
 
 File-creation errors propagate through `eyre`. If installing the global subscriber fails, the template instead prints a diagnostic and returns success from initialization; the requested layers may not be active. The log file has already been opened by that point. A CLI promising reliable log delivery must account for this behavior.
 
+## Keep runtime diagnostics in the logging pipeline
+
+The local `teamy-llm` CUDA runtime routes upload, graph and launch diagnostics through the targets `teamy_llm_makepad_gguf::cuda::{upload,graph,launch}`. Routine profiling is debug-level; fallback and cleanup failures use warning or error levels. The CLI's `teamy_llm` family filter includes these targets. For direct `prompt` or `serve`, `--log-level warn` suppresses successful profiling while retaining warnings and errors; `--debug --log-file ./startup.ndjson` captures the structured CUDA fields alongside service spans.
+
+Rust runtime events use `tracing` directly, while a native host callback bridges launch diagnostics into the same subscriber. Direct stderr prints bypass filters, the NDJSON layer and terminal ownership. Routing these diagnostics through the pipeline lets the application control their delivery. This bridge is specific to the vendored runtime; it does not intercept arbitrary native output.
+
+Interactive inference relays formatted child stderr through an info-level `teamy_llm::worker` event with a `worker_log` field. [Terminal ownership](terminal-ownership.md) buffers human delivery while NDJSON records the wrapper. Original CUDA fields and severity remain text. `--debug` admits both stages; a warning-only parent filter can hide relayed child warnings.
+
+Grounding in the matching service checkout: `vendor/makepad-ai-llm/src/cuda_exec/initial_upload.rs`, `real.rs`, `vendor/makepad-ai-cuda/src/launch_diagnostics.rs`, `crates/teamy_llm_cli/src/logging.rs` and `interactive/engine.rs`. Keep [performance measurements](performance-analysis.md) bound to the executable that produced them; changing diagnostic delivery does not requalify an earlier timing result.
+
 ## Buffering means several different things
 
 Choose the mechanism for the behavior required. Retaining logs for a screen, batching disk writes and delivering logs from another process solve different problems.
