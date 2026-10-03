@@ -1,8 +1,8 @@
 # Score supplied choices with a local model
 
-Use a decision model when your program already knows the possible answers. Supply stable option IDs and return their scores in the same order. Keep text generation behind a separate contract.
+Use a decision model when your program already knows the possible answers. Supply choices in order and read their probabilities in the same order. Use stable option IDs when a saved request needs to identify those choices across calls.
 
-Search terms: Jev, Julia, Julia-1, System One, finite-choice classifier, decision model, probability distribution, visual classifier, Qwen and native Rust inference.
+Search terms: Jev, Julia, Julia-1, System One, finite-choice classifier, decision model, probability distribution, repeated choices, stdin and native Rust inference.
 
 ## Jev explains the hosted decision interface
 
@@ -30,40 +30,72 @@ For native operations, study [Teamy TTS's CUDA implementation](https://github.co
 
 The pinned [Julia inference policy](https://huggingface.co/SupersonicLabs/Julia-1/blob/a85b127321d580d65176c89ced8273f305745d85/inference-policy.json) permits 8,192 tokens and retains a 512-token head. The pinned ONNX wrapper defaults to 1,024 and 256 respectively. Our shared encoder and reference fixtures use 1,024 total tokens and a 256-token head, with the default question “Which option should be chosen?” Keep those budgets fixed during comparison. Oversized state, options or question are rejected rather than silently truncated. A longer accepted context is not evidence of equivalent long-context task accuracy.
 
-## Send a versioned request through the local CLI
+## Score text choices from the terminal
 
-Use `teamy-llm decide` when you want scores for supplied choices. The examples name the matching locally built executable; an older installed `teamy-llm` will not necessarily expose this command. Supply already acquired, revision-checked model files and a reviewed runtime library. The command does not download them.
+The text interface is qualified in local service revision `62e92fd`. Its 91 CLI tests and strict Clippy checks pass. Actual native CUDA runs produced identical ordered probabilities through literal text, stdin, structured output and the established JSON request interface. This local addition is not yet a published service release.
 
-This request describes two options. `input.text` is Julia's state; `question` can be supplied in the request or with `--question`. The request version is `1`, option IDs must be unique and nonempty, and Julia accepts 2 to 20 text options. Unknown fields, unsupported versions and visual input are rejected. Capability checks run before tokenizer or numerical artifact loading.
+Use `teamy-llm decide` with one `--prompt` and a repeated `--choice` for each answer. The typed CLI field is `pub choice: Vec<String>`. Julia-1, the native provider and CUDA are the defaults, independently of the generation model selected for `teamy-llm prompt`. An older executable may not expose the text interface.
+
+With an existing native Julia location recorded, the complete command is:
 
 ```powershell
-$request = @'
-{
-  "version": 1,
-  "input": { "text": "A note about writing a Rust program", "visuals": [] },
-  "options": [
-    { "id": "writing", "content": { "text": "Writing programs", "visuals": [] } },
-    { "id": "playing", "content": { "text": "Playing games", "visuals": [] } }
-  ]
-}
-'@
-$request | teamy-llm decide --provider native --model julia-1 `
-  --model-dir ./models/julia-native --device cuda `
-  --max-tokens 1024 --head-tokens 256 --include-encoding
+teamy-llm decide --prompt "How to add structured logging to a Rust command-line application." `
+  --choice "Writing programs" --choice "Playing games" `
+  --choice "Managing photos"
 ```
 
-For the same JSON saved as `choice.json`, choose ONNX CPU explicitly and quote the `@file` token in PowerShell:
+The text interface writes one probability per line to stdout, in the supplied choice order, including when redirected or piped. It preserves the numerical result's precision. The qualified native CUDA run above returned:
+
+```text
+0.9997739334447404
+0.0001614081787158776
+0.00006465837654370881
+```
+
+The numbers belong to `Writing programs`, `Playing games` and `Managing photos`, respectively. Probabilities are unit-temperature softmax of finite logits. They describe the distribution over these supplied choices, rather than calibrated confidence in a fact.
+
+`--model-dir ./models/julia-native` explicitly overrides the recorded location. That path is a portable example for an already acquired artifact directory. Without the flag, native inference reads the version 1 `julia-native-model.json` record in the runtime's configuration directory; its `model-dir` is an absolute path. `TEAMY_LLM_SERVICE_HOME_DIR` can override the configuration directory. This record is separate from `default-model.json`, which selects the generation model. An absent or invalid record reports an error requesting `--model-dir`; inference does not search directories, download weights or create configuration. ONNX continues to require an explicit artifact directory and runtime library.
+
+Supply 2 to 20 nonempty choice strings. Duplicate labels remain distinct choices at their original positions; the CLI generates distinct ordinal IDs. An `@` character inside prompt or choice text stays literal. Julia's encoder accepts at most 48 tokens per choice, and rejects questions, choices or state that exceed its lossless token budgets. `--question` overrides the default “Which option should be chosen?”
+
+### Read the prompt from stdin
+
+Use `--prompt -` to read raw UTF-8 prompt text from stdin. The choices remain explicit arguments:
 
 ```powershell
-teamy-llm decide --provider onnx --model julia-1 `
-  --model-dir ./models/julia-onnx `
-  --runtime-library ./runtimes/onnxruntime.dll --device cpu `
+"How to add structured logging to a Rust command-line application." | teamy-llm decide --prompt - `
+  --choice "Writing programs" --choice "Playing games" `
+  --choice "Managing photos"
+```
+
+This is text input. `--request -` belongs to the separate JSON request interface. Diagnostics remain on stderr in both output modes; invalid input, loading failure, cancellation and output-write errors propagate as failures.
+
+### Request structured results explicitly
+
+Add `--output-format json` to the text shorthand when your caller needs the complete versioned result:
+
+```powershell
+teamy-llm decide --prompt "How to add structured logging to a Rust command-line application." `
+  --choice "Writing programs" --choice "Playing games" `
+  --choice "Managing photos" `
+  --output-format json
+```
+
+The JSON result preserves choice order in `result.scores`, with `option-id`, `logit` and `probability` per entry. `best-option-id` identifies the largest logit; an exact tie retains the first option. `--include-encoding` also returns raw and padded token IDs, masks and marker positions. A selected ID remains data: executing a file plan or authorizing an action is a separate operation.
+
+## Keep the versioned JSON request interface
+
+Existing `--request` callers retain their JSON input and default JSON output. Do not combine `--request` with `--prompt` or `--choice`. The request version is `1`, option IDs must be unique and nonempty, and Julia accepts 2 to 20 text options. `input.text` is Julia's state; `question` can be supplied in the request or with `--question`. Unknown fields, unsupported versions and visual input are rejected before tokenizer or numerical artifact loading.
+
+For an existing request saved as `choice.json`, quote the `@file` token in PowerShell:
+
+```powershell
+teamy-llm decide --provider native --model julia-1 `
+  --model-dir ./models/julia-native --device cuda `
   --request '@choice.json' --max-tokens 1024 --head-tokens 256
 ```
 
-Omitting `--request` reads piped UTF-8 JSON from stdin; `--request -` also selects stdin. The input limit is 2 MiB. A completed inference writes one versioned JSON result to stdout and exits successfully. Diagnostics remain on stderr; invalid input, loading failure, cancellation and output-write errors propagate as failures.
-
-The result preserves option order in `result.scores`, with `option-id`, `logit` and `probability` per entry. Probabilities are unit-temperature softmax of finite logits, not calibrated confidence. `best-option-id` identifies the largest logit; an exact tie retains the first option. `--include-encoding` also returns raw and padded token IDs, masks and marker positions. The selected ID is data: applying a file plan or authorizing an action remains a separate deterministic operation.
+Omitting `--request` without selecting text shorthand reads piped UTF-8 JSON from stdin; `--request -` also selects JSON stdin. The input limit is 2 MiB. A completed inference writes one versioned JSON result to stdout and exits successfully.
 
 CUDA selection for ONNX rejects CPU graph placement by default. The tested export needs some CPU placement, so a strict CUDA session currently fails during preparation. For an explicitly mixed CPU/CUDA experiment, opt in and record placement:
 
@@ -122,19 +154,11 @@ The measured executable was built from unpublished local additions to service re
 
 The monitor requested 250 ms sampling of process working set and private bytes. Those sample maxima are not true peaks. GPU readings cover the whole device, including other allocations, and cannot establish per-process GPU memory. Monitoring itself adds overhead. These results support a default for this measured fixture and configuration; they do not rank all shapes, devices, precision modes or generation models. See [GPU execution boundaries](gpu-inference.md#make-julias-precision-and-placement-explicit) and [performance analysis](performance-analysis.md).
 
-## Keep visual input explicit
-
-The target service should support text generation with visual input and choice scoring with visual input. Each candidate may contain its own text and image. Julia's current text-only encoder cannot satisfy that complete target.
-
-Represent visual artifacts as explicit references. Record their content identity, media type and preprocessing. A provider must state whether it accepts images in the observation, candidates or both. Reject unsupported requests before inference. Never remove images to make a request fit a text-only provider.
-
-For a Qwen generation provider, verify the actual vision encoder, projector, image preprocessing, tokenizer and runtime. A model card's vision claim and a separate projector file do not prove that the selected loader uses them. See [GPU inference](gpu-inference.md) and [Python-to-Rust parity](python-ml-to-rust.md).
-
 ## Start with a compiling contract
 
 The local service-core example `finite_choice_contract.rs` is the first bounded implementation target. It exercises Facet types, explicit provider capabilities, ordered scores, stable softmax and rejection of unsupported images. Its fixed synthetic provider does not run Julia or Qwen.
 
-The current contract carries encoded visual bytes in memory. It does not read paths, fetch URLs or decode images. Content references and verified preprocessing belong to the next adapter layer.
+The synthetic contract also checks that unsupported image bytes are rejected. That fixture does not add image support to Julia.
 
 
 <details>
