@@ -4,6 +4,8 @@ Use `teamy-llm prompt` when you want generated text rather than [scores for supp
 
 This chapter describes unpublished local additions to `teamy-llm-service`. The [public service revision `cc09503`](https://github.com/TeamDman/teamy-llm-service/tree/cc0950321a13cf6a8621c574d75cca664b150880) predates them. Use the matching locally built executable and check its help. The dated measurements below identify earlier builds separately; they do not measure every subsequent change.
 
+The latest [paired fresh-startup measurement](#local-release-measurement-five-second-fresh-startup) reached visible text in 4.62–4.76 seconds on all three final-build runs, preserving the full generated text and token IDs for the tested workload.
+
 ## Select the model before prompting
 
 Inspect the configured models and select the named OrcaRouter Q4_K_M model:
@@ -23,7 +25,7 @@ Omitting both flags uses the explicit configured preference when present. Otherw
 
 ## Preserve the artifact and prompt contract
 
-The qualified weight file is [OrcaRouter's Qwen3.8-27B-Uncensored Q4_K_M GGUF at `fc437a3`](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-GGUF/blob/fc437a3374c9977bdc339a8ec106dcd9a0357001/Qwen3.8-27B-Uncensored-Q4_K_M.gguf). Its 16,810,714,496 bytes have SHA-256 `3445102e9cde5d562508642c100a2f5ac3368a5a3f748442811d7a95daee3bec`. The adapter verifies that identity on initial runtime loading, before parsing the model and preparing its GPU session. Q4_K_M includes mixed tensor types; it does not mean every tensor is four-bit.
+The qualified weight file is [OrcaRouter's Qwen3.8-27B-Uncensored Q4_K_M GGUF at `fc437a3`](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored-GGUF/blob/fc437a3374c9977bdc339a8ec106dcd9a0357001/Qwen3.8-27B-Uncensored-Q4_K_M.gguf). Its 16,810,714,496 bytes have SHA-256 `3445102e9cde5d562508642c100a2f5ac3368a5a3f748442811d7a95daee3bec`. The adapter verifies every byte against that frozen artifact before parsing the model and preparing its GPU session. The current local implementation uses [compiled ordered chunk commitments](#verify-every-model-byte-with-parallel-chunk-hashes) for this known identity; earlier captures used a serial whole-file hash. Q4_K_M includes mixed tensor types; it does not mean every tensor is four-bit.
 
 Tokenization and single-turn rendering use the separate [publisher source at `8cb32d7`](https://huggingface.co/orcarouter/Qwen3.8-27B-Uncensored/blob/8cb32d72080f6a47bf34dc5adf8067daa6c63a31/tokenizer_config.json). Independent publisher-template fixtures cover Direct and Thinking modes, with and without a system message. The Rust renderer and Hugging Face tokenizer matched those fixture strings and token IDs exactly.
 
@@ -34,6 +36,8 @@ For each service request, the adapter compares GGUF-vocabulary token IDs with in
 This local slice is text-only and single-turn. It does not run a vision projector, accept tool calls or preserve conversation history through the prompt command. The Orca GGUF session defaults to 8,192 context tokens, counting the rendered prompt plus requested output. `--context-tokens` selects a capacity from 128 through 32,768 on `prompt`, `interactive` or `benchmark`; invalid capacities and oversized requests fail rather than truncate silently. A larger capacity reserves more runtime state and can change loading and inference costs. This override is specific to the Orca GGUF provider; the older Burn model retains its existing context contract and rejects an explicit override.
 
 `prompt` defaults to Direct mode and 256 new tokens. Named or configured-default OrcaRouter selection with `--thinking` defaults to 512 in the newer local CLI; the legacy Thinking default remains 1,024. An explicit model directory does not receive that named-model default, so set `--max-new-tokens` yourself. Reduce the output budget for longer prompts.
+
+The newer local service checks the exact independently encoded prompt length plus requested output against that capacity before initializing a new GPU session. File and weight validation can already have run on the CPU. This budget check is distinct from the adapter's later comparison of Hugging Face and GGUF token IDs before GPU prefill.
 
 A historical CUDA Thinking run with the earlier 1,024-token capacity asked “What does café mean in English?” It completed successfully with 59 prompt tokens and the requested 24 generated tokens. Its output was bounded reasoning without a final answer when that token limit was reached. This establishes that tested Unicode/Thinking execution path, not completed task accuracy or a useful default output budget.
 
@@ -97,11 +101,11 @@ This workflow moves loading before client requests; it does not make the initial
 
 The upstream [non-Unix loader at Makepad revision `9e5e3d2`](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/mmap.rs) returns an unavailable-platform error without attempting a Windows file mapping. That explains the message in the historical captures below; elevation, Git long-path settings and renaming the model do not enable that implementation.
 
-Whole-file SHA-256 verification is our adapter's identity policy, not a requirement imposed by Makepad. `crates/teamy_llm_makepad_gguf/src/lib.rs` reads every GGUF byte once when constructing a runtime and compares the named model against its frozen hash. Successful requests reuse that verified runtime. A newly constructed runtime, including one created after a capacity change, verifies again.
+Content verification is our adapter's identity policy, not a requirement imposed by Makepad. `crates/teamy_llm_makepad_gguf/src/lib.rs` verifies every GGUF byte when constructing a runtime. Successful requests reuse that verified runtime. A newly constructed runtime, including one created after a capacity change, verifies again. The verification method is recorded separately from the artifact's original whole-file SHA-256.
 
 With the upstream Windows fallback, Makepad then allocated an owned weight arena and its [bulk reader](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/bulk_read.rs) read tensor data with unbuffered I/O. Those reads did not use the ordinary filesystem-cache warmup from hashing. The newer local implementation vendors the loader and session hook at the same upstream revision, leaving numerical and CUDA kernel code unchanged. `vendor/makepad-ai-loader/src/mmap.rs` supplies a read-only Windows mapping through `memmap2`, avoiding that owned host-weight arena when mapping succeeds.
 
-The mapping owns its file and releases the view before closing the file. Its handle permits ordinary read sharing but denies write and delete sharing for the opened file's lifetime. The adapter holds a similarly guarded file from verification through session preparation. The loader reopens the pathname for mapping, so this contract assumes a stable managed path and immutable backing file; it does not compare the reopened file's identity or protect against namespace changes, pre-existing writable mappings or privileged mutation. Full identity verification remains enabled. A cached length and modification time would not provide the same content check.
+The mapping owns its file and releases the view before closing the file. Its handle permits ordinary read sharing but denies write and delete sharing for the opened file's lifetime. For the frozen Orca chunk-verification path, the adapter now retains the actual verified `Arc<MappedRegion>` and passes that same view into the session's weight context. The upload reads the verified view instead of discarding it and reopening the weight pathname. Metadata is still parsed through its file path, and the serial-verification path retains its separate loader mapping. This contract therefore still assumes a stable managed path and immutable backing file; it does not protect against namespace changes, pre-existing writable mappings or privileged mutation. Every-byte identity verification remains enabled. A cached length and modification time would not provide the same content check.
 
 The [CUDA execution backend](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/llm/src/cuda_exec/real.rs) still uploads weights and prepares device buffers and execution graphs. File mapping does not make these costs zero or establish subsecond cold startup. Keep mapped and fallback captures separate and record their build identities.
 
@@ -110,6 +114,54 @@ The session-preparation span combines host staging, device setup and graph work.
 Ollama's [Windows CUDA loader at `dd1d4e9`](https://github.com/ollama/ollama/blob/dd1d4e99e7e8475d1669f566bb5c0ae30db419f1/llm/server.go) explicitly defaults to no mmap, with a performance rationale. Its interactive CLI reuses a server runner instead. This is implementation prior art, not a matched benchmark against our adapter.
 
 Keep first-load identity verification and measure loading separately from resident use. [Terminal interfaces](terminal-interfaces.md#keep-the-loaded-runtime-between-turns) explain the runtime-lifetime pattern; the explicit service workflow extends that lifetime beyond a single client process.
+
+## Verify every model byte with parallel chunk hashes
+
+The current local adapter reduces serial digest work for the frozen Orca artifact by compiling an ordered table of SHA-256 commitments for 16 MiB chunks. The table contains 1,002 digests, including the exact final short chunk: 32,064 bytes of hash data. It contains no model weights.
+
+Authoring the table reads one guarded file in one pass, computing both its ordinary whole-file SHA-256 and the ordered chunk digests from the same bytes. The result is accepted only when the size and whole-file hash match the original frozen identity. Reviewed source independently pins a canonical table root that binds its version, chunk size, file size, original whole-file hash and ordered digests. A mutable table's own claim about its root or model hash is not trusted.
+
+At each new runtime load, bounded CPU workers freshly hash every chunk and compare the results with the compiled table before model use. The default uses reported available CPU parallelism, capped at 32 workers, with one worker when that information is unavailable. An explicit `TEAMY_LLM_GGUF_VERIFY_WORKERS` override selects a supported count within the same bound; verification cannot be disabled. This does not trust a previous successful run, file size or modification time. Independent chunk hashes cannot reconstruct the ordinary whole-file SHA-256; diagnostics identify this method as `compiled-sha256-chunks-v1`, with the original SHA retained as the artifact identity. Unknown identities retain the serial `full-sha256` verification path.
+
+Implementation references in the matching checkout are `crates/teamy_llm_makepad_gguf/src/chunk_verification.rs`, the adapter's `orca_chunk_commitment` and the digest-only `crates/teamy_llm_makepad_gguf/assets/orca-q4-k-m.sha256-chunks.bin`. The file-sharing and stable-path limits described above still apply.
+
+An intermediate diagnostic capture showed about 1.58 seconds between completed chunk verification and the enclosing span's exit. The implementation discarded its populated mapping in that interval, then the loader opened another view. The current session constructor accepts the verified `Arc` directly, and `load_from_mapped_region` retains it through the weight context. This removes the early view disposal and reopening from startup. The combined qualification below does not isolate this change's contribution to first-text latency; final view disposal still occurs during session teardown.
+
+## Overlap CPU validation before device construction
+
+On a new Orca load, the local service overlaps CPU model preflight with tokenizer validation. `inspect_model_files` first checks required files and declared metadata without parsing the tokenizer or treating the artifacts as validated. A named, scoped CPU worker then verifies the GGUF identity and parses its metadata while the calling thread loads the tokenizer through `TokenizerCache::validate`. Generation reuses that exact parsed `Arc<Tokenizer>` instead of parsing and discarding a second copy. Encoding settings and special-token handling remain unchanged.
+
+Both CPU jobs must finish successfully before the service publishes validated artifacts or constructs the GPU session. A tokenizer failure requests cancellation of preflight and joins its worker before returning the original validation error. Preflight failure or panic also returns an error after the join. Cancellation and these errors leave no detached model reader. A matching resident runtime skips repeated weight preflight, while still validating tokenizer freshness. Replacing the model or context capacity creates a new runtime and repeats preflight.
+
+The existing standalone `inspect_model_dir` and callback-based `inspect_model_dir_with_tokenizer_validation` remain fully validating APIs. The explicitly structural `inspect_model_files` result must not be inserted into a validated-artifact cache before tokenizer validation succeeds. Malformed replacements still fail; the tokenizer cache's freshness checks and explicit invalidation remain in effect. Grounding: `crates/teamy_llm_service/src/cpu_preflight.rs`, `inspect_generation_artifacts` and `generate_gguf` in the service, and `crates/teamy_llm_burn_qwen35/src/model.rs`.
+
+This overlap changes scheduling of the same CPU work. It does not establish its speed contribution or make tokenizer parsing preemptible. Check overlapping spans and the external first-text clock when [qualifying startup changes](performance-analysis.md#qualify-a-cold-start-change).
+
+## Stage Windows uploads with bounded pinned memory
+
+The current local Windows upload uses two staging slots, each at most 64 MiB, allocated with CUDA-pinned host memory. The CPU fills the next slot while the previous slot can transfer to the device. Before overwriting either slot, the uploader waits for its recorded completion event. Transfers keep the original tensor bytes, logical offsets and CUDA stream; this change does not alter quantization, kernels or the Unix upload path.
+
+Pinned memory matters because an asynchronous copy from pageable host memory may require driver staging and synchronization. An `Async` suffix alone does not establish overlap. These semantics are documented in [NVIDIA's API synchronization reference](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html).
+
+The upload owner records each allocation immediately, drains pending transfers before freeing slots, and finishes with stream synchronization. If stream and device drains both fail, it retains the bounded allocations until CUDA teardown rather than freeing memory that DMA might still read. This bounds retained staging memory; it does not make an executing GPU transfer preemptible. Grounding: `vendor/makepad-ai-llm/src/cuda_exec/initial_upload.rs`, called only by the Windows branch of `real.rs`.
+
+The final paired qualification below met the five-second first-visible-text target on all three fresh candidate processes. The historical resident measurements remain separate. See [cold-start qualification](performance-analysis.md#qualify-a-cold-start-change) for the comparison contract and [completed upload timing](performance-analysis.md#measure-completed-upload-work) for interpreting its diagnostics.
+
+## Local release measurement: five-second fresh startup
+
+On 2 October 2026, source revision `9c5011f82b3fb835a18a07172875f576619bc534` produced executable SHA-256 `84b190a4a69664c3f795f84119c6cf0a0d1b55f078cc82fbdadac69f448a3e6b`. Three fresh direct processes were paired with the preserved original executable, SHA-256 `736e48739cb57a9cae9b4af25a5598b3b0c1d92f9ff2929c9b77b86fc95290dd`, alternating which build ran first in each pair.
+
+Both builds used the unchanged Orca Q4_K_M artifact and tokenizer on an RTX 4090, the sky prompt above, 8,192 context tokens, Direct mode and a 256-token output bound. An external monotonic clock started immediately before process launch and measured the first decoded visible model glyph on stdout. No resident model, explicit model/GPU warmup or competing GPU workload was used. Experimental verification, upload-copy and pinned-allocation overrides were unset; the final build used its bounded default of 32 verification workers on this machine.
+
+| Pair | Original first text (s) | Final first text (s) |
+| --- | ---: | ---: |
+| 1 | 18.09 | 4.76 |
+| 2 | 18.01 | 4.62 |
+| 3 | 18.71 | 4.69 |
+
+All six processes completed successfully and emitted the same full 256-token text, byte for byte. Separate structured reference and candidate runs confirmed an identical rendered prompt and all 256 generated token IDs. Candidate startup logs recorded fresh verification of all 16,810,714,496 model bytes against all 1,002 compiled chunk digests.
+
+These results establish the tested fresh-process/model-session boundary, including initial loading. Windows file-cache state was uncontrolled and changed naturally through prior reads; this is not a storage-cold or post-reboot experiment. The three candidate samples met five seconds, but do not guarantee that bound for other hardware, prompts, capacities or future runs. First text also differs from full completion: the candidate commands finished in 12.18–12.57 seconds. The combined change preserves fresh content verification and moves host preparation into overlapping CPU work and bounded completed transfers; this paired comparison does not isolate each component's contribution.
 
 ## Local candidate measurement: fresh clients and mapped loading
 
