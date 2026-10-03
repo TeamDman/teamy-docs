@@ -5,6 +5,7 @@
 - [Find a solution](problem-index.md)
 - [Writing programs](writing-programs.md)
   - [Start a Rust project](rust-cli-template.md)
+  - [Enforce Rust code standards](code-standards.md)
   - [Command-line tools](good-cli.md)
     - [Argument parsing](cli-parsing.md)
     - [Logging with tracing](logging.md)

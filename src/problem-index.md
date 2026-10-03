@@ -9,6 +9,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
 | Start a new Rust CLI | [Understand the template](rust-cli-template.md) | teamy-rust-cli. |
+| Enforce Rust rules, reject print macros or make output testable | [Rust code standards](code-standards.md) | Local template lint policy, supplied writers and compile fixtures; CLI-package adoption in teamy-llm-service. |
 | Parse arguments and expose clear help | [Command-line argument parsing](cli-parsing.md) | Facet, Figue, the template and Cloud-Terrastodon. |
 | Add logs, file output or cross-process diagnostics | [Logging with tracing](logging.md) | The template, Piing and teamy-mft. |
 | Explain startup delay, find CPU hotspots or measure completed GPU work | [Understand performance](performance-analysis.md) | Template spans, teamy-profiler's Cargo harness and CPU capture decoder. |

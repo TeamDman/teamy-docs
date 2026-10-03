@@ -2,6 +2,8 @@
 
 Use the logging setup provided by [teamy-rust-cli](rust-cli-template.md). Emit structured events and spans through `tracing`; let `tracing-subscriber` filter them and send them to the terminal, a file or a profiler. Keep command results on stdout and operational communication on stderr, even when the result format is JSON.
 
+[Our Rust code policy](code-standards.md) rejects plain print macros in adopted packages. Diagnostics belong to tracing; results use a supplied `Write` sink. Cargo instructions and a logging-bootstrap failure have narrowly scoped exceptions. Terminal backends remain valid writers under their terminal owner.
+
 For startup delays, CPU hotspots and completed GPU-work timing, read [performance analysis](performance-analysis.md). It connects these spans to the capture harness and explains what its CPU summaries can establish.
 
 [TeamDman's earlier Windows terminal-colour answer](https://stackoverflow.com/a/78741674) enables virtual terminal processing on `STD_OUTPUT_HANDLE`. It is historical prior art, not proof that stderr has the same mode. Check terminal detection and ANSI support separately for each writer; redirected logs should follow their declared output format. The [authored-answer index](stackoverflow-prior-art.md) records the answer's inspection status.
