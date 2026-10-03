@@ -22,7 +22,7 @@ Its [encoder and decision head](https://huggingface.co/SupersonicLabs/Julia-1/bl
 
 The separate [ONNX release at `82a2fad`](https://huggingface.co/SupersonicLabs/Julia-1-ONNX/blob/82a2fadf8fccfccdc5fd4e1009ba8f1a265eb7a8/README.md) provides the graph for our local ONNX adapter. Its Rust tokenizer is not a native Rust numerical implementation. An `ort` adapter runs the ONNX Runtime C/C++ library.
 
-The local service checkout now contains a shared Julia encoder, a source-defined Burn numerical provider and a Rust-driven ONNX session. Both providers have passed the six-case encoding and score gate described below. A locally built release CLI has also passed subprocess contract checks, an actual stdin inference check and a matched three-request benchmark. These additions are not yet a published release. Native control helps inspect operations and deployment; an ONNX graph helps reuse an existing export. Choose a performance default using comparable measurements for the intended workload.
+The local service checkout contains a shared Julia encoder, a source-defined Burn numerical provider and a Rust-driven ONNX session. The historical provider versions passed the six-case encoding and score gate described below. Earlier local release CLIs also passed subprocess contract checks, an actual stdin inference check and a matched three-request benchmark. The latest combined native release passed that unchanged six-case gate and three installed subsecond completion measurements. Native control helps inspect operations and deployment; an ONNX graph helps reuse an existing export. Choose a performance default using comparable measurements for the intended workload.
 
 [Magika's Rust session](https://github.com/google/magika/blob/708249d4df4374920c663f80139340648ee71d5e/rust/lib/src/session.rs) is existing ONNX prior art. Its [builder](https://github.com/google/magika/blob/708249d4df4374920c663f80139340648ee71d5e/rust/lib/src/builder.rs) configures threading and optimization for its embedded model. That wrapper is not a generic Julia provider. Use the pinned binding's actual session and execution-provider API when building a new adapter.
 
@@ -109,16 +109,62 @@ teamy-llm decide --provider onnx --model julia-1 `
 
 `--allow-cpu-fallback` is valid only for ONNX with `--device cuda`. CUDA provider registration must still succeed. `--profile-prefix` is ONNX-only and writes an ORT node trace; read the actual timestamped filename from the result's `profiling-file` field. Registered providers and permitted fallback are configuration evidence. The recorded node trace establishes what ran where. See [performance analysis](performance-analysis.md).
 
+## Keep Julia's CUDA precision explicit
+
+The new local native path replaces the earlier chunked multiply-and-sum baseline with an explicit whole-matrix FP32 tiled operation. `crates/teamy_llm_burn_julia/src/matmul.rs` selects Cubek's `Strategy::SimpleUnit`, using register tiles and FP32 input and output types. It avoids automatic tensor-core strategy selection, which can select TF32 for FP32 operands, and bypasses matmul autotuning. The source-defined ModernBERT layers, decision head, weights and ordered score contract stay in place. CPU remains the explicit FP32 NdArray reference device.
+
+This is a choice about numerical execution, not evidence of equivalent results or faster startup. Rerun the unchanged six-case encoding, option-order, selected-ID, logit and probability gate after changing the matmul path. Keep the original tolerance constants; do not accept a faster configuration by loosening them.
+
+The local CLI reuses its validated `JuliaEncoder` when loading native weights. Cloned encoders share an `Arc<Tokenizer>` instead of parsing a second tokenizer. For the published BPE bundle, the local `StreamingBpe` deserializer streams modern merge tuples into upstream Tokenizers' `BpeBuilder`, avoiding the generic JSON-value and untagged merge-table intermediates. The upstream BPE builder, encoding algorithms and other tokenizer components remain in use. Unsupported layouts retain the established generic parser. Padding and truncation remain disabled, and the required special-token identities are still checked. Grounding: `crates/teamy_llm_julia_common/src/{lib,streaming_bpe}.rs` and `NativeJuliaProvider::load_with_encoder` in `crates/teamy_llm_burn_julia/src/lib.rs`. The original `load` convenience API still loads and validates its own encoder.
+
+The model keeps the full vocabulary embedding table in a read-only host mapping and uploads only the ordered rows needed by each request. Loading validates the declared FP32 shape, byte range and every value's finiteness, including unused rows. Gathering checks each token index and preserves duplicate tokens, padding and FP32 bits. The retained file handle excludes writes and replacement on Windows for the mapped model's lifetime; other platforms require immutable acquisition files. This reduces device preparation without replacing the vocabulary or changing the input sequence. `MappedEmbeddings` and `JuliaModel` in `crates/teamy_llm_burn_julia/src/model.rs` own the mapping, file handle and row-gather operation.
+
+### Verify the compiler and reuse compiled kernels
+
+Native Julia checks CUDA through library APIs instead of spawning `nvidia-smi`. On Windows, `cuda_runtime.rs` loads the required NVRTC and builtins DLLs from the selected `CUDA_PATH`, checks NVRTC and driver support for CUDA 13.3 or newer, initializes the driver and reads each visible device's compute capability. It retains the libraries for the process. Cudarc's actual compiler library must resolve both `nvrtcVersion` and `nvrtcCompileProgram` to the verified DLL's exact function addresses before CUDA setup proceeds. Mismatched or unavailable runtimes fail explicitly; CUDA selection never silently falls back to CPU. The [driver API version](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__VERSION.html) describes supported CUDA, rather than a driver release number. [NVRTC's version query](https://docs.nvidia.com/cuda/nvrtc/index.html#general-information-query) reports the selected compiler version.
+
+The process uses a compiled-kernel cache under its resolved cache home, separate from model weights. `kernel_cache.rs` hashes the executable bytes, driver API and NVRTC versions, actual device architectures, selected compiler/builtins DLL contents and the bounded toolkit header tree to select its namespace. It holds an exclusive namespace lease for the process. A changed executable or toolkit gets a different namespace. Cache setup failure logs a warning and retains in-memory compilation; an existing foreign persistent CubeCL configuration is rejected.
+
+The local `cubecl-cuda` patch stores native CUBIN images for this provider through the `teamy-cubin-cache` feature. Upstream PTX remains the path when that feature is disabled. Cached entries bind their expected kernel key, format, entry point, shared-memory requirement and image bytes to an XXH3-128 checksum. Bounded image and entry-point validation precedes module loading; incompatible, corrupted or unloadable entries trigger fresh compilation. The checksum detects accidental corruption. The cache remains trusted local executable material and is not authenticated against an attacker. Grounding: `crates/teamy_llm_burn_julia/src/{cuda_runtime,kernel_cache}.rs` and `vendor/cubecl-cuda/src/compute/{context,cache_artifact}.rs` in the matching local service checkout.
+
+For fresh native decisions, `NativeJuliaProvider::load` parses the tokenizer on a scoped CPU worker while the caller prepares the numerical runtime. A second CPU worker validates a backend-independent `PreparedCheckpoint` while the caller verifies CUDA and prepares its compilation cache. The checkpoint owns its immutable file handle, mapping and validated embedding table across the join. CUDA tensors stay on the caller thread. Workers inherit the tracing context and are always joined, including on failure. Capability and policy checks precede startup; GPU model preparation may begin before token-budget and special-token checks finish. Successful encoding remains required before inference. `load-ms` includes this initial parallel preparation but excludes command-line startup, result output and process teardown. Use [Julia's NDJSON phases and external completion measurement](performance-analysis.md#diagnose-julia-with-ndjson-before-timing) to distinguish those boundaries and host submission from completed GPU work.
+
+Resident native decisions pass the current job's cancellation token to `infer_encoded_with_cancellation`. Reusing a provider must not reuse an earlier job's token for its between-layer checks. Executing GPU kernels still cannot be preempted; [cancellation](cancellation.md) describes that boundary.
+
+The host finite-value scan uses runtime-detected AVX2 exponent checks on supported x86 processors, with a scalar fallback and checked unaligned loads and tails. It rejects the same NaN and infinity representations as `f32::is_finite`; it does not convert weights or reduce precision. Chunk boundaries retain cancellation checks. `finite_scan.rs` contains the implementation and independent IEEE edge, vector-lane, alignment and tail fixtures.
+
+The combined local release passed the unchanged six-case parity gate and installed fresh-process completion gate. The [qualified measurement](#local-release-measurement-subsecond-julia-decisions) records the source, executable and cache conditions. The historical CUDA measurements below describe the previous chunked correctness baseline.
+
+## Local release measurement: subsecond Julia decisions
+
+On 3 October 2026, the locally installed release from service source `6aaae2cfc36dd0f27f5a5f48aea578d49ea2c32a` completed the three-choice structured-logging example in under one second on an RTX 4090. Its executable SHA-256 is `9ce10b83947650fd56c5ed0144948268b011ca4ccf972f872c41498127020c91`. The source commit remains local; these are qualified local measurements rather than an assertion that the public repository or release binaries contain the change.
+
+```powershell
+teamy-llm decide --prompt "How to add structured logging to a Rust command-line application." --choice "Writing programs" --choice "Playing games" --choice "Managing photos" --log-filter warn
+```
+
+| Measurement boundary | Recorded milliseconds |
+| --- | --- |
+| Previous installed release: complete fresh processes | 10,273.6; 9,761.1; 9,961.2 |
+| New installed release: complete fresh processes, prepared default CUBIN cache | 953.3; 894.3; 883.6 |
+| First installed invocation using this executable's default kernel namespace, with diagnostic logging | 2,930.7 |
+| Later decisions inside one resident provider, encoding through completed scores | 49.7; 52.5; 52.1 |
+
+Each timed fresh process loads its own numerical model onto the GPU. Its external clock includes startup, final probability output, successful exit and both output streams reaching EOF. Those three installed runs used the default cache home, followed a separately retained first-use diagnostic and had no resident-model warmup. Operating-system file and driver caches were uncontrolled; this does not establish storage-cold performance. The resident row comes from separate `--repeat 4 --output-format json` evidence and excludes process startup, loading and output. The first resident-series inference took 69.8 ms.
+
+All six independent publisher fixtures passed exact encoding, option order and selected-ID checks with the original absolute-plus-relative logit and probability tolerances. The structured CLI fixture passed the same gate. Validation also passed 21 native, 13 encoder and 91 CLI tests, eight common cache-recovery tests, eleven CUDA image/checksum tests and strict scoped all-target Clippy. No model replacement or dependency-version upgrade was required. These timings qualify this prompt, choice set, model and machine; longer inputs or a cache miss can take longer.
+
 ## Keep qualification separate from implementation
 
 The current evidence covers six independent publisher-Python cases with 2, 3, 5, 20, 4 and 2 options, including Unicode, longer state and duplicate descriptions with distinct IDs. Fixtures retain state, question, policy, token arrays, marker positions, intermediate tensors, logits and probabilities. They were generated independently of Rust. See [the isolated reference](python-reference-containers.md).
 
-| Path | Current evidence |
+| Path | Retained qualification evidence |
 | --- | --- |
 | Publisher Python, FP32 CPU | All six cases completed; repeat runs reproduced arrays, intermediate tensors and scores exactly. |
 | Publisher Python, FP32 CUDA with TF32 disabled | All six cases completed and repeated exactly; CPU/CUDA comparison passed the frozen tolerances. |
 | Native Rust/Burn, FP32 CPU | All six cases passed exact encoding/order/selection checks and the frozen score tolerances. |
-| Native Rust/Burn, FP32 CUDA | All six cases passed the same gate using the chunked multiply-and-sum correctness baseline. |
+| Native Rust/Burn, FP32 CUDA correctness baseline | All six cases passed the same gate using chunked multiply-and-sum. |
+| Native Rust/Burn, combined FP32 tiled release | All six cases passed unchanged encoding, selection and score gates, including the shared encoder, mapped rows, parallel startup and CUBIN cache. |
 | Rust ONNX adapter, CPU | All six cases passed exact encoding/order/selection checks and the frozen score tolerances. |
 | Rust ONNX adapter, strict CUDA without CPU fallback | Session preparation failed because graph nodes were assigned to CPU. No inference result was produced. |
 | Rust ONNX adapter, explicitly mixed CPU/CUDA | All six cases passed the same gate with TF32 disabled and CPU fallback explicitly permitted. A node trace records the observed placement. |
@@ -127,15 +173,17 @@ Score acceptance uses `abs(actual - expected) <= absolute_tolerance + relative_t
 
 The mixed-session trace recorded 882 CUDA matrix-operation events: 726 `MatMul`, 144 `FusedMatMul` and 12 `Gemm`. None of the checked heavy operations ran on CPU. Its 798 CPU events had only int64 tensor metadata and comprised `Concat`, `Slice`, `Squeeze`, `Reshape` and `Mul`, consistent with shape/index work. This evidence applies to this session and these inputs; provider registration alone would not establish it. See [GPU placement and measurement](gpu-inference.md#make-julias-precision-and-placement-explicit).
 
-The longest tested input was 137 raw tokens, padded to 144. These results do not qualify every sequence up to the configured 1,024-token budget. The native CUDA path is a slow FP32 correctness baseline awaiting optimization. Single qualification runs include startup or JIT effects, and the ONNX mixed qualification run enabled profiling. The separate release measurements below disable profiling and reuse a resident provider.
+The longest tested input was 137 raw tokens, padded to 144. These results do not qualify every sequence up to the configured 1,024-token budget. The historical native CUDA path used the slow FP32 chunked correctness baseline; the [new tiled operation](#keep-julias-cuda-precision-explicit) needs its own qualification. Single qualification runs include startup or JIT effects, and the ONNX mixed qualification run enabled profiling. The separate historical release measurements below disable profiling and reuse a resident provider.
 
-The final local release executable, SHA-256 `0bd68ca0fb0fe14a302a55d35dc7c5509e9e1cf0c81f97b8c7ca18d7e73fd899`, passed all 40 model-free subprocess checks. They cover root and nested help/version, malformed JSON, unsupported versions and fields, unsupported images, invalid IDs/providers/flags, literal `--` handling and cancellation while stdin remains open. Both `prompt` and `benchmark` rejected `--timeout-ms 0` before missing-model access. Failure cases produced nonzero status, human stderr and empty stdout. The logging regression confirms that explicit `--debug` takes priority over inherited `RUST_LOG=warn`, with diagnostics on stderr and valid nonempty NDJSON in an explicitly selected log file. See [logging](logging.md).
+An earlier local release executable, SHA-256 `0bd68ca0fb0fe14a302a55d35dc7c5509e9e1cf0c81f97b8c7ca18d7e73fd899`, passed all 40 model-free subprocess checks. That receipt predates the latest native startup changes. The checks cover root and nested help/version, malformed JSON, unsupported versions and fields, unsupported images, invalid IDs/providers/flags, literal `--` handling and cancellation while stdin remains open. Both `prompt` and `benchmark` rejected `--timeout-ms 0` before missing-model access. Failure cases produced nonzero status, human stderr and empty stdout. The logging regression confirms that explicit `--debug` takes priority over inherited `RUST_LOG=warn`, with diagnostics on stderr and valid nonempty NDJSON in an explicitly selected log file. See [logging](logging.md).
 
 An actual stdin request also scored the three-choice “preserve the unsaved work” fixture using ONNX CPU. The saved JSON result matched the independent reference's complete encoding, option order, selected ID, explicit question, fixed 1,024/256 policy and unchanged numeric tolerances. This qualifies that tested CLI path; it does not replace the separate provider parity gates or establish task accuracy.
 
-## Local unpublished release benchmark: one matched fixture
+<a id="local-unpublished-release-benchmark-one-matched-fixture"></a>
 
-For this short fixture, explicitly mixed ONNX CUDA produced the lowest resident request times. The current native CUDA multiply-and-sum implementation remains useful as a correctness baseline, but its measured speed does not support making it the performance default.
+## Historical local release benchmark: one matched fixture
+
+For this short historical fixture, explicitly mixed ONNX CUDA produced the lowest resident request times. The earlier native CUDA multiply-and-sum implementation supplied a correctness baseline; these measurements do not compare the latest FP32 tiled path or establish its performance default.
 
 On 2 October 2026, each backend ran in a fresh Windows x64 release process with `--repeat 3`. The same two-option request had 34 raw tokens, padded to 40, the default question and the fixed 1,024/256 policy. Each captured final result passed an independent comparison of complete encoding, option order, selected ID and the unchanged combined score tolerances. The CLI retains only the final result's scores, so this saved-result check does not independently qualify scores from the two earlier repetitions.
 

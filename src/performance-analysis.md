@@ -130,6 +130,8 @@ The verified public [`teamy-profiler` revision `9e2379a`](https://github.com/Tea
 
 The harness builds the selected binary or example, starts `tracy-capture.exe`, runs the target, then records a manifest and summarizes the capture. It forwards requested features and target arguments, and adds an NDJSON log argument when the target's help advertises `--log-file`. It records build, command, capture-shutdown and postprocessing times separately. Inspect target exit, capture-shutdown and postprocessing status before using the CSV. Its `--dry-run` avoids build and target/capture launch, but still runs Cargo metadata and writes its plan manifest. Grounding: [Cargo harness](https://github.com/TeamDman/teamy-profiler/blob/9e2379a9335aa0bae8acd917d6a85b7269807deb/src/cli/run/cargo/run_cargo_cli.rs).
 
+The NDJSON file complements the Tracy capture. The current profiler commands summarize `.tracy` CPU spans; they do not ingest NDJSON or turn its close events into a phase report. Inspect those structured events separately. Tracy's exclusive CPU summary helps find host hotspots, while named NDJSON phases help relate setup, model selection and completed requests to one another.
+
 For an existing capture, these project-relative paths are illustrative:
 
 ```powershell
@@ -141,6 +143,51 @@ teamy-profiler tracy csv export ./tracy/review.tracy `
 The second command creates or truncates its named output file. The [exporter](https://github.com/TeamDman/teamy-profiler/blob/9e2379a9335aa0bae8acd917d6a85b7269807deb/src/cli/tracy/tracy_cli.rs) ranks aggregate self/exclusive CPU time. Its percentage divides summed span time by capture wall time; parallel threads can exceed 100%. A long parent span and its child spans must not be added together as independent costs.
 
 The [decoder](https://github.com/TeamDman/teamy-profiler/blob/9e2379a9335aa0bae8acd917d6a85b7269807deb/src/tracy_native/mod.rs) supports zstd-compressed Tracy 0.13.1–0.13.3 captures and stops after CPU timelines. It does not analyze GPU zones, allocations or call stacks. The later locally inspected profiler change inherits capture-process diagnostics; that change is not in the cited public revision.
+
+## Diagnose Julia with NDJSON before timing
+
+Use the same text-choice workload for diagnosis and qualification. Collect detailed phases in a separate run with an explicit fresh log filename:
+
+```powershell
+teamy-llm decide --prompt "How to add structured logging to a Rust command-line application." `
+  --choice "Writing programs" --choice "Playing games" `
+  --choice "Managing photos" `
+  --debug --log-file ./profiles/julia-phases.ndjson
+
+Get-Content ./profiles/julia-phases.ndjson |
+  ForEach-Object { $_ | ConvertFrom-Json } |
+  Where-Object { $_.fields.message -eq 'close' } |
+  Select-Object timestamp, @{n='span';e={$_.span.name}}, `
+    @{n='busy';e={$_.fields.'time.busy'}}, `
+    @{n='idle';e={$_.fields.'time.idle'}}
+```
+
+The command requires an already recorded native Julia artifact location; [explicit overrides and the text input contract](finite-choice-models.md#score-text-choices-from-the-terminal) are unchanged. The CLI appends to `--log-file`, so use a new filename for each experiment. Prompts need not be logged to measure phase durations. Direct `decide` preserves structured span fields; an interactive worker's existing relay retains formatted line text under `worker_log` instead.
+
+| Phase in the matching local implementation | Timing boundary |
+| --- | --- |
+| `julia_tokenizer_load` / `julia_tokenizer_parse` | Tokenizer file loading and parsing. These spans are nested and can overlap native CUDA/cache setup. |
+| `julia_native_cuda_verify` | Native driver/NVRTC queries, exact compiler-library matching and device architecture discovery; no model inference. |
+| `julia_kernel_cache_setup` | Executable/toolkit content hashing, namespace selection and persistent-cache lease/configuration. |
+| `julia_checkpoint_prepare` | CPU-only configuration, immutable checkpoint mapping and full embedding validation, overlapped with CUDA/cache setup. |
+| `julia_load` / `julia_native_model_load` | Initial provider preparation, including parallel tokenizer parsing, and its nested numerical preparation respectively. Their host durations alone do not prove that all queued transfers have completed. |
+| `julia_embedding_validate` | Host finite-value scan of every embedding row, including unused rows. Shape/range checks precede this span. |
+| `julia_embedding_gather` | Checked host row gathering and submission of the ordered input embedding tensor. `upload_bytes` describes input size, not completed transfer time. |
+| `julia_encoder_layer` / `julia_decision_layer` | Host work for a model layer, including any implicit waits. These are not CUDA device-time measurements. |
+| `julia_native_infer` | Numerical inference through the final logits readback and finite-logit check. |
+| `julia_decide` | Encoding, completed inference and validated ordered scores for one repetition; initial model/tokenizer loading and stdout serialization are outside this span. |
+
+Grounding: `JuliaEncoder` and `StreamingBpe` in `crates/teamy_llm_julia_common/src/{lib,streaming_bpe}.rs`, runtime setup and logits `into_data().convert::<f32>().to_vec()` readback in `crates/teamy_llm_burn_julia/src/{lib,model,cuda_runtime,kernel_cache}.rs`, and `DecisionEngine::evaluate_json` in `crates/teamy_llm_cli/src/cli/decide/llm_decide_cli.rs`. These paths refer to the matching local service checkout. Rounded `time.busy` and `time.idle` strings describe span lifetime; adding nested spans double-counts work. The readback ensures the GPU operations needed for those logits have finished, rather than merely been submitted.
+
+Read these intervals as a schedule. The fresh native CLI parses the tokenizer on one scoped CPU worker and prepares its immutable host checkpoint on another, while the caller verifies CUDA and prepares its compiled cache. After joining the checkpoint worker, the caller creates numerical tensors; successful encoding precedes inference. `load-ms` covers this parallel preparation. Adding overlapping or nested durations overstates elapsed work. Capability and policy checks precede startup; numerical preparation may begin before encoding finishes. Every worker is joined on success or failure. Command-line startup, output and teardown still sit outside `load-ms`.
+
+For final latency, run fresh CLI processes sequentially with the same prompt and three choices, using `--log-filter warn` and no NDJSON or Tracy capture. Start an external monotonic clock immediately before process launch; stop only after exit and both stdout and stderr reach EOF. Require exit zero, exactly three finite normalized probability lines and independent agreement with the structured result's choice order. The original independent encoding, ID, logit and probability gate remains separate from the output-shape check.
+
+Keep the first run and every later run. For a subsecond completion goal, every qualified sample must finish below 1,000 milliseconds; first stdout, internal `inference-ms` and the fastest sample are different measurements. Do not prewarm the model or run another GPU workload during fresh-load qualification. Record the executable, configuration, logging filter and uncontrolled operating-system file and driver caches.
+
+Identify compiled-kernel cache state separately. Julia's local CUBIN cache reuses executable/toolkit/device-specific compiled code, while every fresh CLI still constructs its model and uploads the required tensors. A new binary selects a new namespace. An empty-cache first use can include NVRTC compilation; a later fresh process can load its existing CUBIN images. Those processes are model-cold but compilation-cache warm. A resident decision reuses both model and compiler state. Retain all three cases instead of presenting their times as one cold-start result. A diagnostic run can itself populate the cache, so record whether it ran before qualification.
+
+The combined release has passed the unchanged six-case parity gate and three installed complete-process measurements: 953.3, 894.3 and 883.6 ms with its populated default CUBIN cache. Its first default-cache invocation, captured separately with diagnostics, took 2,930.7 ms. These are model-cold processes with uncontrolled operating-system file caches, not a storage-cold guarantee. The [release measurement](finite-choice-models.md#local-release-measurement-subsecond-julia-decisions) records exact identities, resident timings, validation and limits. [Implementation decisions](finite-choice-models.md#keep-julias-cuda-precision-explicit) explain the changes.
 
 ## GPU submission is not completion
 
