@@ -1,0 +1,84 @@
+# Choose a desktop UI framework
+
+Choose the UI layer around the application's work: forms and tables, diagnostic controls, or a continuously rendered scene. For our Windows desktop tools, evaluate egui/eframe for compact diagnostic surfaces, Iced for message-driven applications, and GPUI Kit for richer tables, editors and docking. Makepad is a candidate when custom shader styling and shared native/mobile code justify learning its runtime. Bevy fits applications whose core is a scene or simulation. Raw DirectX fits a deliberate graphics implementation or learning exercise with a budget to own the surrounding UI.
+
+These are evaluation candidates, not adopted Teamy dependencies or a performance ranking. Reviewed on 11 October 2026 using existing source snapshots and current official sources. No framework builds, accessibility tests, device trials or benchmarks were run for this comparison. Maintenance assessments below are our inference from the layers each option requires us to own.
+
+## Compare the application layers
+
+| Option | Widgets, layout and state | Rendering and maintenance implication |
+| --- | --- | --- |
+| [GPUI Kit](#gpui-kit) | Styled forms, tables, virtual lists, editor and dock panels; flex-style elements, entities, actions and subscriptions. | GPU framework plus component system. Less component authoring, but upgrades must keep Kit and its pinned GPUI compatible. |
+| [Makepad](#makepad) | Widget catalog, live/script design language and custom shaders; Rust event/action handling. | Own GPU runtime and platform backends. Live design helps iteration; DSL, shaders and backend behavior add specialist knowledge. |
+| [Bevy UI](#bevy) | ECS entities/components, Flexbox and CSS Grid; buttons, text, images and newer text-input facilities. | Game engine with wgpu rendering, scheduling and asset systems. Useful when already owning a scene; assembling application controls and engine migrations adds work. |
+| [egui / eframe](#egui-and-eframe) | Immediate-mode controls, panels, windows, grids and layouts; application-owned state. | egui emits meshes; eframe supplies the app/window integration. Straightforward diagnostic UI; complex product layouts and specialized controls may need extensions. |
+| [Iced](#iced) | Responsive rows/columns, forms, scrolling and custom widgets; Elm-style state, messages, update and view. | wgpu or tiny-skia renderer. Explicit effects and state suit service clients; custom widgets and pre-1.0 API changes remain our work. |
+| [Raw DirectX](#raw-directx) | No application widget catalog or layout/state system. | Direct3D graphics primitives and explicit resource management. We own or integrate text, UI, events and accessibility; greatest scope of responsibility here. |
+
+## Platforms and interaction boundaries
+
+| Option | Documented targets relevant here | Accessibility and text input evidence |
+| --- | --- | --- |
+| GPUI Kit | Windows, macOS and Linux listed; web via WebAssembly advertised. Native Android and iOS support not established by inspected sources. | README advertises AccessKit semantics and tests; input composition tests exist. Verify Narrator and actual IMEs against the chosen backend. |
+| Makepad | Windows, macOS, Linux, Android, iOS and web; the cited README includes Android and iOS build commands. | Windows source handles IME composition and candidate placement. A complete screen-reader semantic bridge was not established in the inspected platform/widget sources. |
+| Bevy | Official site lists Windows, macOS, Linux, web, iOS and Android. | AccessKit-backed accessibility nodes; semantics, focus and actions still require application work. Current source includes text input; do not project it onto old engine pins. |
+| egui / eframe | egui is integration/platform agnostic; eframe README lists Windows, macOS, Linux, Android and web. Native iOS support not established by inspected sources. | Optional AccessKit, enabled by default in eframe; integration carries IME events. The README describes platform limits; Android renderer support is not proof of TalkBack support. |
+| Iced | Windows, macOS, Linux and web listed. Native Android and iOS support not established by inspected sources. | Current changelog records input-method support. A production screen-reader bridge was not established from reviewed sources; treat accessibility as an adoption question. |
+| Raw DirectX | Windows only for this Win32/Direct3D baseline. macOS, Linux, Android, iOS and web are outside this implementation; portability would require another platform/graphics layer. | Custom controls need a UI Automation provider or another semantic bridge. IME and text services are separate integrations. |
+
+Platform listings describe upstream capability, not our shipping qualification. For the broker Android companion, Makepad, Bevy and eframe have documented Android paths worth testing. GPUI Kit web support could serve a browser client but does not establish a native mobile app. Do not force the desktop choice onto the companion: share the broker protocol and domain model, then test Android lifecycle, touch, keyboard, permissions and accessibility independently. Android's [accessibility guidance](https://developer.android.com/guide/topics/ui/accessibility/apps) supplies the interaction requirements.
+
+## GPUI Kit
+
+The requested name resolves to [Longbridge's `gpui-kit`](https://github.com/longbridge/gpui-kit), whose local origin still uses the earlier `longbridge/gpui-component` coordinate. This is not bare [GPUI](https://github.com/zed-industries/zed/tree/6bf539cd52126974eb0dbff667de02a696a737ec/crates/gpui) or a substitution with another GPUI kit. The [inspected Kit README](https://github.com/longbridge/gpui-kit/blob/8d8cc6715e8f9f0765e8c1a0b005eb70f4c59b52/README.md) explains the umbrella crate: GPUI is the foundation, `gpui-base` supplies behavior and infrastructure, and `gpui-component` supplies styled controls. Optional `gpui-shell` adds JavaScript extensions. The [manifest](https://github.com/longbridge/gpui-kit/blob/8d8cc6715e8f9f0765e8c1a0b005eb70f4c59b52/crates/kit/Cargo.toml) identifies 0.7.1 and Apache-2.0; documentation has separate terms.
+
+Kit reports use in Longbridge Pro, which is deployment evidence rather than a guarantee for our application. [Async guidance](https://github.com/longbridge/gpui-kit/blob/8d8cc6715e8f9f0765e8c1a0b005eb70f4c59b52/skills/gpui-kit/references/gpui/async.md) separates foreground entity updates from background work. [Composition tests](https://github.com/longbridge/gpui-kit/blob/8d8cc6715e8f9f0765e8c1a0b005eb70f4c59b52/crates/kit/tests/input/composition.rs) are concrete input evidence. Pin Kit's GPUI dependency and confirm the selected platform renderer instead of assuming Zed's current backend matches it.
+
+## Makepad
+
+The [inspected README](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/README.md) documents its Rust runtime, scriptable live UI design and Android/Apple build tooling. Its platform code carries Direct3D 11 on Windows, Metal on Apple platforms and OpenGL/WebGL paths elsewhere. Inspect [Windows input handling](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/platform/src/os/windows/win32_window.rs) for composition behavior. Its [widgets manifest](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/widgets/Cargo.toml) identifies 2.0.0 and MIT OR Apache-2.0; the repository root has an MIT license.
+
+Use worker results to drive events/actions and redraws; keep network and model work outside callbacks. Live design and mobile tooling merit evaluation, while accessibility remains an explicit qualification gap. Our [Makepad inference references](makepad-patterns.md) and [mail study](email-planning.md) do not establish GUI adoption or end-to-end mobile quality.
+
+## Bevy
+
+Separate the [engine](https://bevy.org/) from its built-in UI and from [bevy_egui](https://github.com/vladbat00/bevy_egui/tree/0554ede4dc58f4a484d952fe5beaded1efac3d67), an additional integration. The inspected [UI source](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/crates/bevy_ui/src/lib.rs) describes Flexbox/Grid over ECS; [accessibility](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/crates/bevy_ui/src/accessibility.rs) and [text input](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/examples/ui/text/text_input.rs) show current facilities. Text input's system clipboard is opt-in, and IME/device behavior needs testing.
+
+The [manifest](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/Cargo.toml) identifies 0.19.1 and MIT OR Apache-2.0. [Async task examples](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/examples/async_tasks/async_compute.rs) return worker results to ECS updates. Our older [utility-app manifest](https://github.com/TeamDman/sample-bevy-utility-app/blob/0762d5d3873c58bf6cf3209d0c335bc217250c22/Cargo.toml) pins 0.17.0-rc.1, so newer UI facilities do not automatically exist there. Budget engine/plugin migrations; choose this scope when scene rendering earns it.
+
+## egui and eframe
+
+[egui](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/README.md) builds UI and meshes; [eframe](https://docs.rs/eframe/latest/eframe/) hosts applications using window/input integration and wgpu or glow rendering. Using egui inside an existing renderer is a different ownership decision from starting an eframe application. State lives in application Rust data; communicate with workers through channels or promises and request repaint when results arrive.
+
+The [local snapshot manifest](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/Cargo.toml) identifies 0.33.3, MIT OR Apache-2.0. [eframe features](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/crates/eframe/Cargo.toml) enable AccessKit by default. Verify semantics of custom widgets as well as built-in controls; native support does not make web or Android accessibility equivalent. Budget version migrations and any external table, dock or plotting libraries.
+
+## Iced
+
+The [current upstream README](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/README.md) describes responsive widgets, async actions, wgpu and tiny-skia, and calls the software experimental. The [manifest](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/Cargo.toml) is 0.15.0-dev, MIT. [Tasks](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/runtime/src/task.rs) represent effects; [subscriptions](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/futures/src/subscription.rs) carry ongoing streams. This fits broker/service events updating an explicit application model.
+
+The existing older clone has extensive working changes; its base is [4e409bb](https://github.com/iced-rs/iced/tree/4e409bb383be103a6ecd66d1e52a0a8d41fd7ddb). Do not infer current APIs from that worktree. The current [changelog](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/CHANGELOG.md) supplies input-method evidence. Accessibility and native mobile support remain unresolved adoption gates here, not claims that no implementation can exist.
+
+## Raw DirectX
+
+DirectX is an API family; this baseline means owning a Win32 window plus Direct3D rendering, as in [DirectX-Learning](https://github.com/TeamDman/DirectX-Learning/tree/8e1a08a110df2dca5ca37d32f04953dbcc4236b9). Its [D3D12 graphics implementation](https://github.com/TeamDman/DirectX-Learning/blob/8e1a08a110df2dca5ca37d32f04953dbcc4236b9/crates/windows-rs-sample-direct3d12-improved-v7/src/graphics/mod.rs) shows swap-chain and fence ownership. Current local modifications are not represented by that published base.
+
+Microsoft's [D3D12 guide](https://learn.microsoft.com/en-us/windows/win32/direct3d12/directx-12-programming-guide) covers the graphics responsibilities. We additionally need layout, text shaping, hit-testing, focus, clipboard, input, state and async dispatch. Custom controls require [UI Automation providers](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-providersoverview); [IME integration](https://learn.microsoft.com/en-us/windows/win32/intl/input-method-manager) is separate. Microsoft SDK terms and the licenses of Rust bindings, examples and assets must be checked individually; there is no single toolkit license. Reuse [window/event prior art](window-creation.md), but a window helper does not supply this UI stack.
+
+## Iteration speed and hot reload
+
+Separate changing live layout/style data, replacing compiled code, and preserving application state. Repainting state changes is ordinary runtime behavior; it is not Rust code reload. No iteration timings were measured here.
+
+| Option | Verified iteration mechanism | State and restart boundary |
+| --- | --- | --- |
+| GPUI Kit | Runtime themes and component state can change; no general Rust code-reload mechanism was established in this review. | Plan rebuild/restart for Rust changes. External configuration reload requires an application watcher and validation. |
+| Makepad | Live design/script reruns update UI data; source discusses [animator behavior during script reruns](https://github.com/makepad/makepad/blob/3b1be7023ddfe7e8f56161cbf34c66c103ed37e1/widgets/core/src/animator.rs). | This is not arbitrary Rust function replacement. Retention is widget/state specific; test edits that recreate nodes, and plan rebuild/restart for compiled Rust changes. |
+| Bevy | Asset watching reloads data such as scenes/textures. Separately, [system hotpatching](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/examples/ecs/hotpatching_systems.rs) uses the `hotpatching` feature and Dioxus CLI. | The example patches system/observer bodies in a running world; compilation still occurs. It does not establish arbitrary component-layout migration or rerunning startup systems. Unsupported changes need restart or explicit state migration. |
+| egui / eframe | UI reads current application state each pass; that makes changing runtime parameters immediate. | No general Rust code reload established here. eframe's optional [storage/save hooks](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/crates/eframe/src/epi.rs) restore selected state across restarts; persistence is not hot reload. |
+| Iced | Current upstream has an optional, explicitly very experimental `hot` feature. Its [Program wrapper](https://github.com/iced-rs/iced/blob/a8231fd9ddf3570f95affba2d45a9be092007f71/src/hot.rs) hotpatches update/view and other program logic. | It retains the program's state type and passes existing state to patched logic. This does not establish safe changes to state layout or arbitrary dependencies. Verify toolchain/platform requirements; otherwise rebuild/restart. The old local 0.8.0 base does not establish this feature. |
+| Raw DirectX | Shader or configuration reload can be built into our own runtime. | No automatic app-code reload is supplied by Direct3D. We own watching, recompilation, pipeline replacement, GPU synchronization and state migration; compiled Rust normally needs rebuild/restart. |
+
+For a Minecraft-like edit-and-observe loop, record exactly what can change while a broker connection, selection and queued operations stay alive. Test schema changes and cleanup as well as visual edits; a successful color change does not qualify a whole-code hot-reload workflow.
+
+## Qualify the choice with one real screen
+
+Prototype a broker status screen with reconnect/cancel, a bounded event list and editable configuration. Preserve service/domain ownership outside the GUI, use bounded worker messages, and connect [logging](logging.md) and [cancellation](cancellation.md). Check keyboard traversal, Narrator, IME composition, clipboard, DPI changes, sleep/resume and shutdown on Windows. For Android, add TalkBack, soft-keyboard resizing, rotation, background/resume and permission handling. Measure startup, idle usage and sustained updates on the same workloads before comparing performance; source architecture alone supplies no ranking.

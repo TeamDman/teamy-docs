@@ -1,5 +1,8 @@
 # Curate prior art by problem
 
+This is reference material. Inclusion in an index or survey is not endorsement or adoption. [TeamyStyle](teamystyle.md) owns the engineering standards; recommendations here require a stated purpose, rationale, source evidence and decision/adoption status.
+
+
 Record a useful solution under the problem it solves. A reader asking “add a tray icon” should reach the tray chapter, then Piing or tb. They should not have to recognize either repository name first.
 
 Use [the problem index](problem-index.md) to discover our established approaches. A chapter should explain what worked, why we keep it, where it lives in code and what needs adapting.

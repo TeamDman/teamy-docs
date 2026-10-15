@@ -55,6 +55,8 @@ Rust's `Result` implementation of `Termination` reports an error and returns a f
 
 The [teamy-rust-cli template](https://github.com/TeamDman/teamy-rust-cli) provides a central output layer that renders typed values and propagates serialization and stdout write errors. The local mover follows the same pattern, with completed dry-run findings carried in its report.
 
+[Span traces and error hooks](logging.md#attach-tracing-spans-to-eyre-errors) explain how `tracing-error`, `color-eyre` and subscriber initialization retain logical operation context. [Typed IPC telemetry](logging.md#preserve-field-types-before-crossing-ipc) distinguishes an owned remote error record from a process-local `eyre::Report`.
+
 ## Cancellation and incomplete output
 
 Cancellation observed before completion propagates as an error rather than pretending the operation completed. See [cancellation with teamy-cancellation](cancellation.md) for token propagation and cleanup boundaries.

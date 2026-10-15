@@ -2,7 +2,76 @@
 
 Use a decision model when your program already knows the possible answers. Supply choices in order and read their probabilities in the same order. Use stable option IDs when a saved request needs to identify those choices across calls.
 
-Search terms: Jev, Julia, Julia-1, System One, finite-choice classifier, decision model, probability distribution, repeated choices, stdin and native Rust inference.
+Search terms: Jev, Julia, Julia-1, System One, Clef, Clef-Flash, Qwen, finite-choice classifier, decision model, probability calibration, multiple questions, repeated choices, stdin and native Rust inference.
+
+## Reuse Qwen generation weights for decisions
+
+The local extension on 5 October 2026 adds Qwen finite-choice scoring. RTX 4090 checks exercised text choices and image choices against the same resident weights used for prompting. Julia remains the default; select Qwen explicitly:
+
+```powershell
+teamy-llm decide --provider qwen --model qwen3.8-27b-uncensored-q4-k-m `
+  --prompt "A note about writing a Rust program" `
+  --choice "Writing programs" --choice "Playing games" --daemon
+```
+
+The daemon uses the same resident Qwen language weights as `prompt`. Each decision has independent attention cache, recurrent state and position counters. It does not load a second classifier checkpoint or replace the language model's output head. A local command uses that same provider path within its own process.
+
+The adapter assigns labels `A` through `T` in supplied choice order. It places the question, input and choices in a Direct-mode chat prompt. After prefill, it reads the vocabulary logits for the labels and applies unit-temperature softmax over those labels only. Tokenizers must map each label to a distinct single token; otherwise the request fails. Scoring needs no generated explanation or sampled answer.
+
+Probabilities therefore mean preference among the supplied labeled choices under this prompt. They are not calibrated factual confidence or a reproduction of Julia's learned decision head. Ordering and label wording can affect the distribution. Keep the complete question and option order fixed when comparing changes.
+
+Text shorthand retains one probability per line, in supplied order. JSON retains the versioned finite-choice result and stable option IDs. Its `qwen-encoding` records the scoring method, option-to-label token mapping and image-position count. Julia's `encoding-policy` is null for Qwen. Qwen uses the complete formatted prompt rather than Julia's head-token encoding policy.
+
+Qwen accepts 2 to 20 choices with text, images or both. Use [explicit Liquid templates for image choices](image-prompts.md#score-images-as-input-or-choices). Images require the prepared matching projector. Julia stays text-only. `--context-tokens` and `--strict` follow [Qwen's context policy](local-text-generation.md#choose-output-and-context-budgets).
+
+The source is an uncommitted local extension over service commit `6aaae2cfc36dd0f27f5a5f48aea578d49ea2c32a`; that base revision does not reproduce it. Inspect `crates/teamy_llm_service/src/decision/qwen.rs`, the shared service decision route and `crates/teamy_llm_makepad_gguf/src/lib.rs` in the matching checkout. Existing Julia reference gates and the historical measurements below qualify Julia, not this new scoring method.
+
+The [shared-owner qualification](resident-inference.md#qualified-final-local-build) selected the intended writing-programs and photos categories while two generation clients were active. The final image check selected a red example over blue with probability 0.99708226. These are small functional fixtures, not a calibrated classification benchmark. [Resident measurements](performance-analysis.md#local-resident-batching-baseline) include fresh-client completion time; a decision queued behind long generations can take much longer than an idle decision. [Local interactive mode](interactive-inference.md#reuse-qwen-across-local-mode-changes) also retains the same managed Qwen runtime across prompt and decision modes.
+
+## Compare Clef with our decision providers
+
+The [0xSero announcement on X](https://x.com/0xSero/status/2107145311852356070) led us to Cloudflare's Clef models. We reviewed their primary documentation on 5 October 2026. Clef is external model and runtime prior art; `teamy-llm` does not currently expose a Clef provider. The announcement is a discovery reference, not our performance qualification.
+
+All three paths can score supplied choices without generating an explanation. Their numerical methods differ:
+
+| Path | How it scores | Current scope |
+| --- | --- | --- |
+| Our Julia integration | SupersonicLabs' trained text encoder and decision head produce an option score. | One question with text input and choices. |
+| Our OrcaRouter Qwen integration | The generation model's final next-token logits score single-token labels `A` through `T`. | One question, with text or images in the input and choices; generation shares the resident language weights. |
+| Clef | A trained joint decision head uses the Qwen backbone's token representations to score several questions together. | Choice, Boolean and ordinal questions, with vision support. |
+
+Cloudflare trained the decision head alongside backbone adapters. Its head pools question and option spans, attends to relevant input evidence and connects the questions. Adding that head unchanged to our OrcaRouter checkpoint would not reproduce the published model. The [Clef training explanation](https://blog.cloudflare.com/clef-decision-models/) describes these differences and its calibration objective. Our Julia integration implements the published Julia algorithm; our Qwen adapter shares the broad decision-without-generation idea rather than Clef's trained architecture.
+
+### Reuse one input across several questions
+
+Suppose one input describes a Rust CLI that cannot write structured logs. Several decisions can use that same observation:
+
+| Question | Supplied answers |
+| --- | --- |
+| Which guide applies? | Logging, terminal ownership, argument parsing |
+| Is terminal interference involved? | Yes, no |
+| How urgent is the fix? | Low, medium, high |
+
+This is a synthetic schema example, not a prediction or an implemented CLI command. Clef scores the questions together in one backbone pass. It avoids processing the same input separately for each question. Additional questions lengthen the backbone input and add encoding and head work; reuse does not make them free.
+
+Our current CLI and RPC express one question per request. A future multi-question contract should retain question IDs, answer order and typed results, including the distinction between categorical probabilities and an expected ordinal score. Multiple questions about one input are different from batching independent requests. Measure them separately, alongside the [resident scheduler's actual batching behavior](resident-inference.md#share-weights-and-schedule-continuous-work).
+
+### Avoid scoring work the result does not need
+
+Our Qwen decider currently computes a complete vocabulary output before selecting its few label scores. [Remove unused decision scoring work](performance-analysis.md#remove-unused-decision-scoring-work) describes two candidates: omit intermediate-chunk logits and project only the requested final label rows. These changes can be investigated independently of adding Clef or training a new head. They are proposed optimizations, not measured improvements.
+
+Clef also motivates a quality comparison. Our normalized label scores are not calibrated factual confidence. Check correctness, choice-order sensitivity and probability calibration on representative tasks before selecting a provider. Compare fresh-process and resident latency separately; published latency figures from other hardware do not rank our RTX 4090 providers.
+
+### Inspect the model and runtime references
+
+Use these sources for their stated purposes:
+
+- [Clef model card](https://huggingface.co/Cloudflare/clef) and [Clef-Flash model card](https://huggingface.co/Cloudflare/clef-flash) define the released models, trained head and input/output interface.
+- [Clef's reference implementation](https://huggingface.co/Cloudflare/clef/blob/2f3de3dd85f379784083b0814d997ab627200f0c/joint_schema_model.py) grounds span encoding and head computation in a pinned source snapshot.
+- [Ollama's decision API](https://docs.ollama.com/capabilities/decision) documents `/v1/systemone` and Clef support from version 0.35.1. [llama.cpp v0.6.0](https://github.com/ggml-org/llama.cpp/releases/tag/v0.6.0) supplies another reference runtime, including Clef vision support.
+- [Maintainer Clef GGUFs](https://huggingface.co/ggml-org/Clef-GGUF) and [Clef-Flash GGUFs](https://huggingface.co/ggml-org/Clef-Flash-GGUF) provide quantized candidates. Q4_K_M weights are about 19.2 GB and 6.49 GB respectively; projector, working state and runtime allocations add memory.
+
+Clef-Flash Q4_K_M is a candidate for a matched comparison with Julia and our Qwen adapter. Pin the model, projector and compatible runtime together. Retain correct results, calibration, completion latency and peak memory before considering native Rust integration. No Clef benchmark or local memory-fit claim is established here.
 
 ## Jev explains the hosted decision interface
 
@@ -35,6 +104,8 @@ The pinned [Julia inference policy](https://huggingface.co/SupersonicLabs/Julia-
 The text interface is qualified in local service revision `62e92fd`. Its 91 CLI tests and strict Clippy checks pass. Actual native CUDA runs produced identical ordered probabilities through literal text, stdin, structured output and the established JSON request interface. This local addition is not yet a published service release.
 
 Use `teamy-llm decide` with one `--prompt` and a repeated `--choice` for each answer. The typed CLI field is `pub choice: Vec<String>`. Julia-1, the native provider and CUDA are the defaults, independently of the generation model selected for `teamy-llm prompt`. An older executable may not expose the text interface.
+
+The newer local daemon interface adds `--daemon` to the same command. It sends the request to an already running service and reuses its decision provider. Without that flag, inference remains local. Read [resident inference connections](resident-inference.md) for default-model location, explicit paths, cancellation and request-log forwarding. The dated qualification measurements below predate this transport addition.
 
 With an existing native Julia location recorded, the complete command is:
 

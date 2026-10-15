@@ -2,9 +2,64 @@
 
 Pass a cancellation token through the work and check it at safe boundaries. The first Ctrl+C requests cancellation. Workers must observe the token; it does not interrupt every running function or future. The handler's repeated-signal policy is described below.
 
+## Current 0.4 async and interruption contract
+
+The local template inspected on 15 October 2026 now locks **teamy-cancellation 0.4.0** from crates.io, with `figue`, `arbitrary` and `async` enabled alongside the default features. Its lockfile SHA-256 is `66c8b3b805c322763510198c3025f9101182867594bee988c49c34d51481fd0d`. The downloaded [published source archive](https://static.crates.io/crates/teamy-cancellation/teamy-cancellation-0.4.0.crate) matched that checksum; its VCS metadata identifies revision `8c4dcc3bb58a30e7115671ccff9adbe944d3f958`. The older local library checkout remains 0.3.1 and cannot establish the newer async behavior. This section supersedes the older template-version statements below, while preserving that older example's qualification.
+
+[TeamyStyle](teamystyle.md) requires a controlled first cancellation request, prompt async propagation and explicit ownership of remote work. In 0.4.0 the exact default signal policy is:
+
+- First Ctrl+C requests cancellation with reason `Operation cancelled by Ctrl+C`.
+- If another Ctrl+C arrives **at most one second after the preceding Ctrl+C**, with the default force-exit option enabled, the process calls `process::exit(130)`. The comparison is inclusive (`<=`), measured with `Instant`; it is between consecutive signals, not simply “any later second press.”
+- A later signal outside that window requests graceful shutdown again and becomes the new preceding signal. `repeated_ctrl_c_window` and `should_force_exit_on_repeated_ctrl_c` are explicit handler configuration.
+- Hard exit can bypass destructors, terminal restoration, checkpoints, queued logs and async cleanup. It cannot promise rollback or a final receipt. The one-second signal interval is not a deadline for finishing graceful shutdown or for answering a human prompt.
+
+Source: [`CtrlCHandler`](https://github.com/TeamDman/teamy-cancellation/blob/8c4dcc3bb58a30e7115671ccff9adbe944d3f958/src/ctrlc_handler.rs) and [`CancellationState`](https://github.com/TeamDman/teamy-cancellation/blob/8c4dcc3bb58a30e7115671ccff9adbe944d3f958/src/cancellation_state.rs). The inspected template installs `CtrlCHandler::default()`, retaining its direct colored `^C` stderr print. **Gap:** that library print bypasses tracing, so Ctrl+C can contaminate requested NDJSON stderr or a TUI. The handler can disable that print; an adopter must route the notice through its guarded diagnostic path and qualify the result instead of claiming clean NDJSON from ordinary log tests alone.
+
+### Wake pending async work
+
+With the 0.4.0 `async` feature, `token.cancelled().await` waits for sticky cancellation on the token or an ancestor; each wait registers its own waker and unregisters when dropped. `token.cancellable(fallible_future).await` returns a typed `CancellationError` through the future's error type when cancellation is observed. It can wake an otherwise pending I/O wait; unlike the 0.3.1 example, polling before and after an unrelated long await is no longer the only available pattern.
+
+Use `cancellable` only for work that is safe to abandon. It stops polling the operation, retains its inner future until the wrapper is dropped, and cannot preempt a running poll, blocking system call or GPU kernel. If the operation returns ready during its poll, that original result wins over a concurrent cancellation request. Keep the wrapper's borrowed sources alive until it is dropped. Arbitrary task abort/drop is not transactional cleanup.
+
+Contextual 0.4.0 fragment (not compiled by this book):
+
+```rust,ignore
+let request_cancel = application_cancel.child_token();
+let result: eyre::Result<Response> = request_cancel
+    .cancellable(read_cancellation_safe_response())
+    .await;
+// Finish the operation's declared cleanup/checkpoint path before returning result.
+```
+
+Parent cancellation reaches descendants; cancelling a child does not cancel its parent or siblings. Clone a token to share the same scope. The optional `deferral` feature provides `for_operation()` and deferral guards for required completion work, but the inspected template does **not** enable that feature. Do not claim it protects a template mutation automatically. Even with deferral enabled, external abort/drop and hard process exit bypass that cooperation.
+
+Source: [token API](https://github.com/TeamDman/teamy-cancellation/blob/8c4dcc3bb58a30e7115671ccff9adbe944d3f958/src/cancellation_token.rs), [cancellable future](https://github.com/TeamDman/teamy-cancellation/blob/8c4dcc3bb58a30e7115671ccff9adbe944d3f958/src/cancellable_future.rs) and [wait implementation](https://github.com/TeamDman/teamy-cancellation/blob/8c4dcc3bb58a30e7115671ccff9adbe944d3f958/src/cancellation_wait.rs).
+
+### Complete the owned shutdown path
+
+On graceful cancellation, stop accepting new work, notify owned workers and await their completion. Finish an already irreversible action or persist its declared recovery state; pair completed effects with their receipts before reporting a stop. Drain owned output/diagnostic queues under an explicit shutdown budget, report loss, restore terminal state and return nonzero if the command did not complete. A cancellation token alone does none of that orchestration.
+
+Use a request child token for daemon calls. Send cancellation through the transport, observe acknowledgement/completion and keep an independently started daemon alive. An elevated child is a separate process: explicitly define whether the parent or child owns Ctrl+C and how cancellation crosses that boundary; console attachment and exit propagation do not establish cancellation propagation. Cancelling a client locally is not proof that remote work stopped. After forced termination, the next run must reconcile durable state rather than invent a completed receipt.
+
+**Exit expectations:** forced signal exit is exactly 130 in this library. The current template's safe binary boundary returns `ExitCode::FAILURE` for cooperative command errors, including cancellation; it does not map every cancellation to 130. Completed domain findings still follow [typed result semantics](output-shape.md). A project promising a different interruption status must implement and test that mapping explicitly.
+
+### Accept the behavior, not just the installed handler
+
+| Scenario | Required evidence |
+| --- | --- |
+| First OS Ctrl+C during pending async work | The operation wakes, stops new work, completes cleanup/checkpoint/drain, restores the terminal and exits nonzero without forced termination. |
+| Already-cancelled token, then dispatch | No operation starts; the typed cancellation reason is retained. |
+| Parent versus child request cancellation | Parent wakes dependent waits; child cancellation leaves its sibling and independently owned daemon usable. |
+| Consecutive signal timing | State tests cover a rapid repeat, the exact one-second boundary, a repeat outside it, and disabled force exit; process tests separately establish actual OS signal delivery and hard exit 130. |
+| Cancellation after an effect, before receipt | Recovery reconciles actual state; no false success or blind replay. Test abrupt process death separately from cooperative stop. |
+| Cancelled remote/elevated request | Remote completion/acknowledgement and invoking-client status agree; following work succeeds and log loss is disclosed. Console reattachment alone is insufficient evidence. |
+| NDJSON or active TUI plus Ctrl+C | No direct library notice corrupts machine framing or the screen; cleanup is checked in the actual terminal host. |
+
+The current template's `tests/async_cancellation.rs` contains parent-wake, cancelled-dispatch, duration and typed-error fixtures. The published library contains signal-state tests. Those inspected fixtures do not establish all OS signal, terminal, durable-state or elevated/daemon acceptance cases above, and were not rerun for this documentation update. The historical bounded-await example below retains its original version and validation scope.
+
 ## Use the shared library
 
-[teamy-cancellation](https://github.com/TeamDman/teamy-cancellation) provides `CancellationToken` and `CtrlCHandler` for Rust tools. The example below targets version 0.3.1 at public revision `7c77848e759079e21f2039b25b147d780807725b`. The local CLI template and mover pin that revision. The locator currently uses version 0.2.0, so optional facilities can differ.
+[teamy-cancellation](https://github.com/TeamDman/teamy-cancellation) provides `CancellationToken` and `CtrlCHandler` for Rust tools. The example below targets version 0.3.1 at public revision `7c77848e759079e21f2039b25b147d780807725b`. That was the CLI template and mover baseline when the example was qualified; the current template now uses 0.4.0 as described above. The locator currently uses version 0.2.0, so optional facilities can differ.
 
 Install the process-wide handler once at the command entry point. Installation returns `eyre::Result<CancellationToken>` and can fail. Pass the token, or a clone sharing its state, into each worker.
 

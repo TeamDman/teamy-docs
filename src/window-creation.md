@@ -6,6 +6,8 @@ Use tb's direct Win32 setup or Piing's versioned helpers as prior art. For [syst
 
 [Executable icons](executable-icons.md) explains how these consumers reuse resources from the application module. [Native message boxes](native-message-boxes.md) explains message and task dialogs, which have their own interaction and manifest requirements.
 
+For a visible application, [compare UI frameworks](ui-frameworks.md) before choosing widgets and rendering. Direct Win32 window creation is one layer; raw DirectX still needs layout, input and accessibility integration.
+
 ## Register the class and create the right window
 
 tb registers a `WNDCLASSW` with its callback, checks registration and calls `CreateWindowExW`. Piing uses `teamy-windows` 0.7.0 to register a `WNDCLASSEXW` and create its window. Both create hidden, normal top-level windows. Neither uses an `HWND_MESSAGE` message-only window. This matters for their `TaskbarCreated` broadcast handling.

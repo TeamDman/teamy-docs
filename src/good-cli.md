@@ -39,6 +39,8 @@ Use argument arrays when launching another process. Do not construct a shell com
 
 ## Stable output
 
+[TeamyStyle](teamystyle.md#specify-observable-cli-contracts) specifies the independent stdout/result and stderr/log formats, stderr TUI ownership, rich help/version identity, remote diagnostics and their acceptance examples. The template implements those requirements progressively; its presence is not a substitute for verifying them.
+
 Keep command results on standard output and human progress, notices and diagnostics on standard error. `--output-format json` selects the stdout format; it does not silence stderr. A command may emit a JSON result while talking to the user on stderr. Only stdout must remain free of progress bars, log lines and other decoration.
 
 Text, JSON and other formats should render the same typed result. Document its schema, version compatibility, UTF-8 encoding and record framing. For a measurement report, represent unknown size as unknown, not zero, and include capture time and coverage where they affect interpretation.

@@ -1,5 +1,10 @@
 # Teamy Docs
 
+## Standards and reference material
+
+Read [TeamyStyle](teamystyle.md) for normative engineering rules and its [template decision inventory](teamystyle-template-audit.md) for source and enforcement scope. The separate Guides and references part contains implementation guides, repository indexes and surveys. Inclusion there records discovery or evidence; it is not endorsement or dependency adoption. An explicit recommendation needs a named purpose, rationale, source evidence and accepted decision status.
+
+
 Use [Find a solution](problem-index.md) to look up the problem you want to solve. This book explains how we have solved problems in our tools, why we chose those approaches and where to inspect the code. You should not need to know a project's name to discover its useful work.
 
 The first two areas are [writing programs](writing-programs.md) and [playing games](playing-games.md). Both benefit from explicit goals and feedback, but their rewards and acceptable experiments can differ. The [glossary](glossary.md) gives shared terms without forcing every activity into the same model.

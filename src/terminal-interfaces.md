@@ -24,6 +24,8 @@ The UI command still belongs in the typed CLI schema. Cloud-Terrastodon dispatch
 
 ## Decide which stream owns the screen
 
+[TeamyStyle](teamystyle.md#put-interactive-screens-on-stderr) requires new Teamy CLI TUIs to render on stderr and reserve stdout for results. The table below describes historical implementation choices, including an existing stdout application; it does not override that new-project requirement.
+
 Stdout and stderr are separate streams, but they usually render in the same terminal. Moving logs to stderr preserves machine stdout; it does not stop those logs from overwriting a stdout TUI.
 
 | Command contract | Screen destination | Result destination |

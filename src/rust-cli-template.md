@@ -60,6 +60,8 @@ Replace the package identity, CLI description, example commands, help-source rep
 
 ## Check dependencies and validation
 
+Build runtime expectations into new commands as well as correctness checks. The [performance guide](performance-analysis.md) explains the template's tracing/NDJSON/Tracy tool chain and the local `CommandTimer` helper. Declare a workload-specific `Duration`, check elapsed time at meaningful phases and at the final boundary, and emit a structured warning when it is exceeded. Preserve the typed result and cancellation behavior. These local additions are not part of the baseline source permalink above and must be retained when choosing a newer template snapshot.
+
 Read `Cargo.toml`, `Cargo.lock` and `check-all.ps1` in the source snapshot you are adopting. A fork revision is part of the project's behavior. Do not assume a copied CLI uses the latest registry release or that updating its template also updates existing projects.
 
 The baseline [validation script](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/check-all.ps1) runs nightly formatting, Clippy with all features and warnings denied, an all-feature build, and tests with Tracy excluded. Its formatting step changes files despite being labelled a check. The local update uses nightly formatting with `--check`, Clippy with `--all-targets --all-features --no-deps -- -D warnings`, and a separate [lint policy regression script](code-standards.md#run-the-policy-checks-explicitly). Test new command behavior with a meaningful fixture and inspect stdout, stderr and status separately.

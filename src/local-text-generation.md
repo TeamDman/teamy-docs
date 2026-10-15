@@ -1,6 +1,6 @@
 # Generate text with a local model
 
-Use `teamy-llm prompt` when you want generated text rather than [scores for supplied choices](finite-choice-models.md). Choose the model explicitly, bound the output and keep its weights, tokenizer and chat template together. A model name alone does not identify a working numerical runtime.
+Use `teamy-llm prompt` when you want generated text rather than [scores for supplied choices](finite-choice-models.md). Choose the model explicitly and keep its weights, tokenizer and chat template together. Set an output bound when your caller needs one. A model name alone does not identify a working numerical runtime.
 
 This chapter describes unpublished local additions to `teamy-llm-service`. The [public service revision `cc09503`](https://github.com/TeamDman/teamy-llm-service/tree/cc0950321a13cf6a8621c574d75cca664b150880) predates them. Use the matching locally built executable and check its help. The dated measurements below identify earlier builds separately; they do not measure every subsequent change.
 
@@ -33,15 +33,25 @@ The pinned Hugging Face weight and source repositories require authorized access
 
 For each service request, the adapter compares GGUF-vocabulary token IDs with independently encoded Hugging Face IDs before GPU prefill. Any token or ordering mismatch rejects the request. Session preparation can precede this comparison; it is not a promise that no GPU allocation has occurred. The numerical runtime uses [Makepad revision `9e5e3d2`](https://github.com/makepad/makepad/tree/9e5e3d2b03214f8c2c37adffa0e308c815662060), with a resident quantized CUDA session. See [Makepad's execution patterns](makepad-patterns.md).
 
-This local slice is text-only and single-turn. It does not run a vision projector, accept tool calls or preserve conversation history through the prompt command. The Orca GGUF session defaults to 8,192 context tokens, counting the rendered prompt plus requested output. `--context-tokens` selects a capacity from 128 through 32,768 on `prompt`, `interactive` or `benchmark`; invalid capacities and oversized requests fail rather than truncate silently. A larger capacity reserves more runtime state and can change loading and inference costs. This override is specific to the Orca GGUF provider; the older Burn model retains its existing context contract and rejects an explicit override.
+The qualified measurements in this chapter use text-only, single-turn generation. [Prompt with local images](image-prompts.md) describes the newer Liquid and vision implementation. Tool calls and conversation history remain separate capabilities.
 
-`prompt` defaults to Direct mode and 256 new tokens. Named or configured-default OrcaRouter selection with `--thinking` defaults to 512 in the newer local CLI; the legacy Thinking default remains 1,024. An explicit model directory does not receive that named-model default, so set `--max-new-tokens` yourself. Reduce the output budget for longer prompts.
+## Choose output and context budgets
 
-The newer local service checks the exact independently encoded prompt length plus requested output against that capacity before initializing a new GPU session. File and weight validation can already have run on the CPU. This budget check is distinct from the adapter's later comparison of Hugging Face and GGUF token IDs before GPU prefill.
+The working CLI change on 5 October 2026 makes omitted `--max-new-tokens` unlimited in Direct and Thinking modes. Generation ends at the model's end token, cancellation, timeout or an unrecoverable runtime failure. Supply a positive length to impose an output limit. The same contract applies to `interactive` and `benchmark`. The older dated captures below keep their explicit output limits.
+
+The Qwen GGUF advertises 262,144 context positions. This is its declared model context, rather than an output-token allowance. Formatted input, chat markers, image positions and generated tokens all consume cache capacity. The working adapter retains 8,192 positions as an initial allocation and removes the former 32,768-position ceiling. `--context-tokens` requests an initial capacity; it does not request a second set of model weights.
+
+Without `--strict`, the new scheduling path warns about an output or context budget beyond advertised context or available memory. It attempts to continue within physical limits. It can grow request storage, reduce concurrency or suspend another request. If a single request cannot grow further, it warns before discarding its oldest retained context and replaying the remaining positions. Generated output can continue, but the model no longer attends to discarded input. Unlimited output does not mean unlimited remembered context.
+
+With `--strict`, a finite request reserves its complete formatted input and requested output before generation. It fails if that budget exceeds trained context, an explicit request `--context-tokens` budget, or the observed physical fit. An omitted request context override does not freeze the server's initial cache allocation. A strict request without an output length may continue to EOS while its declared and physical context fits. It fails if continuation would require discarding context or exceeding those budgets.
+
+Qwen uses rotary positional encoding. A trained context boundary does not itself make another token mathematically impossible. Extending positions can reduce model quality, and available cache memory still imposes a real limit. Models with a fixed learned positional table can have a different hard boundary. Do not infer one model's extension behavior from another's metadata.
+
+The 5 October local CUDA checks cover growth from a small initial cache, suspension after output started, replay without duplicate delivery, strict rejection and best-effort context rollover. Their [qualification record](resident-inference.md#local-cuda-qualification-on-5-october-2026) identifies the executable and workload. They do not inherit the historical latency measurements below or promise identical greedy prose across different batch kernels. The older Burn provider still rejects an explicit context override.
 
 A historical CUDA Thinking run with the earlier 1,024-token capacity asked “What does café mean in English?” It completed successfully with 59 prompt tokens and the requested 24 generated tokens. Its output was bounded reasoning without a final answer when that token limit was reached. This establishes that tested Unicode/Thinking execution path, not completed task accuracy or a useful default output budget.
 
-`--timeout-ms` bounds generation, excluding queue wait and model loading. `--stop-after-duration` requests cooperative cancellation from CLI startup. Cancellation checks occur between operations; they do not preempt an active load operation or GPU kernel. Generated text is an observation, not permission to execute a command.
+For the Qwen scheduler, `--timeout-ms` starts when the request reaches the GPU owner, after language-runtime loading. It includes owner queueing, suspension, image preparation and generation. `--stop-after-duration` requests cooperative cancellation from CLI startup, including earlier connection and loading phases. Checks occur between operations; they do not preempt an active load operation or GPU kernel. Generated text is an observation, not permission to execute a command.
 
 The earlier release used for the tokenizer-reuse measurements below passed 40 model-free subprocess checks. Both `prompt --timeout-ms 0` and `benchmark --timeout-ms 0` failed with nonzero status and human diagnostics before missing-model access. The newer typed CLI separately passed [73 subprocess checks](interactive-inference.md#inspect-the-implementation-behind-the-interface). Real generation runs and model-free argument checks remain separate evidence.
 
@@ -59,7 +69,7 @@ The input limit is 2 MiB of bytes. Invalid UTF-8 and oversized input fail before
 
 ## Reuse the runtime within one process
 
-A new `prompt` process without `--address` loads its own runtime. Reuse applies to repeated calls through one service instance, the benchmark's `--repeat` loop or [resident interactive inference](interactive-inference.md). An explicitly selected resident service, described below, keeps that runtime across separate client processes.
+A new `prompt` process without `--daemon` loads its own runtime. Reuse applies to repeated calls through one service instance, the benchmark's `--repeat` loop or [resident interactive inference](interactive-inference.md). An explicitly selected [resident service](resident-inference.md), described below, keeps that runtime across separate client processes.
 
 To measure that distinction for the same 32-token Direct workload:
 
@@ -86,14 +96,16 @@ The service verifies and loads the model, then generates one warmup token before
 From another terminal, start a fresh client for each request:
 
 ```powershell
-teamy-llm prompt --address 'local://\\.\pipe\teamy-llm-service' `
+teamy-llm prompt --daemon `
   --model qwen3.8-27b-uncensored-q4-k-m --context-tokens 8192 `
   --no-thinking --max-new-tokens 64 -- "Why is the sky blue?"
 ```
 
-The client requires an explicit `--model`; `--model-dir` is not accepted with `--address`. The server resolves that name against its own prepared inventory. This command uses local IPC, rejects TCP and remote Windows pipe servers, and fails if it cannot connect. It does not start another server or fall back to loading a local model. On Windows, `serve` defaults to the full pipe shown above; the short `local://teamy-llm-service` spelling is not a valid Windows pipe address.
+The newer local client accepts `--daemon` without a value for the default endpoint, or with an explicit local address. An explicit `--model` selects the server's prepared inventory; omitting it asks the server to resolve its own default. `--model-dir` remains local-only for generation. This command uses local IPC, rejects TCP and remote Windows pipe servers, and fails if it cannot connect. It does not start another server or fall back to loading a local model. On Windows, `serve` defaults to the full pipe shown above; the short `local://teamy-llm-service` spelling is not a valid Windows pipe address.
 
-Use the same model and capacity for prewarming and requests. A capacity change replaces the resident GGUF session and repeats loading instead of retaining two weight copies or silently using a smaller allocation. Exiting the server ends residency. Requested CUDA does not silently become CPU execution.
+[Resident inference connections](resident-inference.md) covers `prompt`, `decide` and `interactive`, optional endpoint parsing, source-level log forwarding and cancellation. Earlier releases used `prompt --address` and required an explicit model. Their dated measurements below retain that original interface and build identity.
+
+The Qwen scheduler keeps one resident set of weights across request capacities. Growing mutable caches can require graph rebuilding and retained-history replay. The local [mixed and memory-pressure checks](resident-inference.md#local-cuda-qualification-on-5-october-2026) exercised this path while retaining the weight allocation. The earlier daemon build replaced the full session when capacity changed; its captures still describe that behavior. Exiting the server ends residency. Requested CUDA does not silently become CPU execution.
 
 This workflow moves loading before client requests; it does not make the initial server load disappear. Compare [cold startup and resident latency](performance-analysis.md#separate-process-startup-from-model-residency) before treating a fast fresh-client result as a cold-start result.
 
@@ -101,7 +113,7 @@ This workflow moves loading before client requests; it does not make the initial
 
 The upstream [non-Unix loader at Makepad revision `9e5e3d2`](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/mmap.rs) returns an unavailable-platform error without attempting a Windows file mapping. That explains the message in the historical captures below; elevation, Git long-path settings and renaming the model do not enable that implementation.
 
-Content verification is our adapter's identity policy, not a requirement imposed by Makepad. `crates/teamy_llm_makepad_gguf/src/lib.rs` verifies every GGUF byte when constructing a runtime. Successful requests reuse that verified runtime. A newly constructed runtime, including one created after a capacity change, verifies again. The verification method is recorded separately from the artifact's original whole-file SHA-256.
+Content verification is our adapter's identity policy, not a requirement imposed by Makepad. `crates/teamy_llm_makepad_gguf/src/lib.rs` verifies every GGUF byte when constructing a runtime. Successful requests reuse that verified runtime. A newly constructed runtime verifies again. In the earlier daemon, a capacity change also constructed a new runtime; the scheduler change separates mutable cache growth from weight lifetime. The verification method is recorded separately from the artifact's original whole-file SHA-256.
 
 With the upstream Windows fallback, Makepad then allocated an owned weight arena and its [bulk reader](https://github.com/makepad/makepad/blob/9e5e3d2b03214f8c2c37adffa0e308c815662060/libs/ai/loader/src/bulk_read.rs) read tensor data with unbuffered I/O. Those reads did not use the ordinary filesystem-cache warmup from hashing. The newer local implementation vendors the loader and session hook at the same upstream revision, leaving numerical and CUDA kernel code unchanged. `vendor/makepad-ai-loader/src/mmap.rs` supplies a read-only Windows mapping through `memmap2`, avoiding that owned host-weight arena when mapping succeeds.
 
@@ -131,7 +143,7 @@ An intermediate diagnostic capture showed about 1.58 seconds between completed c
 
 On a new Orca load, the local service overlaps CPU model preflight with tokenizer validation. `inspect_model_files` first checks required files and declared metadata without parsing the tokenizer or treating the artifacts as validated. A named, scoped CPU worker then verifies the GGUF identity and parses its metadata while the calling thread loads the tokenizer through `TokenizerCache::validate`. Generation reuses that exact parsed `Arc<Tokenizer>` instead of parsing and discarding a second copy. Encoding settings and special-token handling remain unchanged.
 
-Both CPU jobs must finish successfully before the service publishes validated artifacts or constructs the GPU session. A tokenizer failure requests cancellation of preflight and joins its worker before returning the original validation error. Preflight failure or panic also returns an error after the join. Cancellation and these errors leave no detached model reader. A matching resident runtime skips repeated weight preflight, while still validating tokenizer freshness. Replacing the model or context capacity creates a new runtime and repeats preflight.
+Both CPU jobs must finish successfully before the service publishes validated artifacts or constructs the GPU session. A tokenizer failure requests cancellation of preflight and joins its worker before returning the original validation error. Preflight failure or panic also returns an error after the join. Cancellation and these errors leave no detached model reader. A matching resident runtime skips repeated weight preflight, while still validating tokenizer freshness. Replacing the model creates a new runtime and repeats preflight. Changing the same Qwen model's mutable cache capacity retains its verified weights, though graph rebuilding and history replay can add work.
 
 The existing standalone `inspect_model_dir` and callback-based `inspect_model_dir_with_tokenizer_validation` remain fully validating APIs. The explicitly structural `inspect_model_files` result must not be inserted into a validated-artifact cache before tokenizer validation succeeds. Malformed replacements still fail; the tokenizer cache's freshness checks and explicit invalidation remain in effect. Grounding: `crates/teamy_llm_service/src/cpu_preflight.rs`, `inspect_generation_artifacts` and `generate_gguf` in the service, and `crates/teamy_llm_burn_qwen35/src/model.rs`.
 

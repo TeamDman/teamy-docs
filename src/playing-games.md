@@ -2,6 +2,8 @@
 
 Choose what a session is for before optimizing it. Enjoyment, learning, exploration and competition are valid goals, and they can call for different decisions.
 
+For mod-development and AI-driven client checks, see [Minecraft client automation](minecraft-client-automation.md). It records ClientDevBridge CLI capabilities and compatibility limits separately from ordinary play objectives.
+
 ## State the objective
 
 Compare these objectives:

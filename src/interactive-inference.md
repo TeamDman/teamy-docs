@@ -29,7 +29,7 @@ teamy-llm model list --output-format json
 
 `show` reports the model, directory and selection origin. The text list marks the selected row with `(default)`; JSON carries `is-default` alongside the same inventory fields. Without an explicit preference, selection uses the first existing registered model; if none is registered, it falls back to the built-in Qwopus model. Omitting a model from `prompt` produces a warning and points to `model list`; the interactive header shows the effective selection.
 
-An interactive session resolves an omitted selection once at startup and sends that explicit directory to its worker. Changing the preference from another process does not change the open session's model or displayed label. Start another session to adopt the new preference. Named or implicit-default Orca thinking mode defaults to 512 new tokens; an explicit directory needs an explicit output bound.
+A local interactive session resolves an omitted selection once at startup and sends that explicit directory to its worker. With `--daemon`, it asks the existing server to resolve its default and sends named selections to that server. Changing the preference from another process does not change an open session's model or displayed label. Start another session to adopt the new preference. The 5 October working CLI leaves generation unlimited when `--max-new-tokens` is omitted, including Thinking mode. See [output and context budgets](local-text-generation.md#choose-output-and-context-budgets).
 
 Configuration and artifact storage have independent `TEAMY_LLM_SERVICE_HOME_DIR` and `TEAMY_LLM_SERVICE_CACHE_DIR` overrides. See [start a Rust project](rust-cli-template.md) for our configuration and CLI conventions.
 
@@ -84,23 +84,42 @@ Decision mode accepts the same version 1 request JSON as [score supplied choices
 
 Julia's `--max-tokens` and `--head-tokens` govern its encoding policy. They are separate from the generation session's `--context-tokens` and output bound; a shared interface does not make those budgets interchangeable.
 
+The Qwen extension uses `--decision-provider qwen` with the selected managed Qwen model. With `--daemon`, prompting and decisions share the server's resident language weights. Explicit local managed Qwen mode changes now retain their worker and shared language service too. Existing Julia captures remain separate; see [Qwen decision scoring](finite-choice-models.md#reuse-qwen-generation-weights-for-decisions) and [the shared-owner CUDA checks](resident-inference.md#qualified-final-local-build).
+
+## Reuse Qwen across local mode changes
+
+Select the managed Qwen model and decision provider together:
+
+```powershell
+teamy-llm interactive --model qwen3.8-27b-uncensored-q4-k-m `
+  --decision-provider qwen --max-new-tokens 64
+```
+
+The local worker retains one language service across these prompt and decision modes. Changing to a different provider still uses the process boundary described below. Keeping weights resident does not preserve the previous turn as conversation history.
+
+The final 5 October executable, SHA-256 `1aaf09648184674d20d1d69717258ce4a0dda828f96cf267791ba5db109f1c2b`, passed a local scripted sequence: prompt `OK`, choose the writing option, then prompt `Paris`. All 3 results succeeded with one resident Qwen load diagnostic; the decision reported `load-ms: 0`. The final prompt's first-token event took about 218 ms. This is one script using default 32-position prefill, not an interactive latency distribution or visual terminal qualification.
+
 ## Separate model residency from conversation history
 
-Repeated requests within one mode retain the worker and its numerical runtime. Prompt turns are independent: the visible transcript does not become the next model input. The Orca GGUF session defaults to 8,192 tokens for the formatted prompt plus requested output. `--context-tokens` selects 128 through 32,768; the session's capacity and model selection remain fixed while it is open. Lower the output limit for longer inputs. The older Burn provider retains its own context contract and rejects this explicit override.
+Repeated requests within one mode retain the worker and its numerical runtime. Prompt turns are independent: the visible transcript does not become the next model input. The Qwen scheduling extension starts with 8,192 context positions by default and removes the former 32,768-position cap. Mutable storage can grow independently of weight lifetime. Memory pressure can suspend work or, without `--strict`, warn before discarding older context. The [resident scheduling contract](resident-inference.md#share-weights-and-schedule-continuous-work) describes those paths and their measured scope. The older Burn provider retains its own context contract and rejects this explicit override.
 
-Cold loading verifies the frozen GGUF identity and prepares its GPU session. A resident request reuses that session and the unchanged tokenizer instead of repeating those cold steps. Interactive reuse is scoped to its owned worker; exiting the CLI ends it. For separate client processes, use the explicit [prewarmed local service](local-text-generation.md#keep-a-model-resident-for-fresh-clients) with `prompt --address`. Interactive mode does not automatically attach to that service.
+Cold loading verifies the frozen GGUF identity and prepares its GPU session. A resident request reuses that session and the unchanged tokenizer instead of repeating those cold steps. Without `--daemon`, interactive reuse is scoped to its owned worker; exiting the CLI ends it. The newer local `interactive --daemon` owns a model-free relay child that connects to an existing [resident service](resident-inference.md). Prompt and decision inference stays in that server. Exiting closes the owned relay and leaves the independently started server running. Connection is explicit, with no automatic start or local fallback.
 
 The historical release used Makepad's Windows owned-arena fallback. The newer local loader adds read-only Windows file mapping while retaining our adapter's full identity verification. Residency and mapping address different work: retaining a session avoids reconstructing it, while mapping changes its initial host-weight loading path. Neither removes first-load hashing or GPU session preparation. See [the Windows mmap explanation](local-text-generation.md#understand-the-windows-mmap-message).
 
 The newer [fresh-client capture](local-text-generation.md#local-candidate-measurement-fresh-clients-and-mapped-loading) reached visible text in about 320 to 500 ms for three short requests against a prewarmed 8,192-capacity service. Its fresh local model load still took about 18.1 seconds to visible text. Those are external process-start clocks, distinct from the interactive submission clocks below; the service's initial warmup is excluded from its client times.
 
-Switching between prompt and decision modes replaces the owned worker process. Dropping a provider alone does not guarantee that Burn or CubeCL releases allocator-held GPU memory. The process boundary releases that mode's residency before loading the other model. Returning to a mode therefore includes another cold load. Work remains sequential.
+Local mode changes between different providers replace the owned worker process. Dropping a provider alone does not guarantee that Burn or CubeCL releases allocator-held GPU memory. The process boundary releases that mode's residency before loading the other model. Explicit managed Qwen prompting and decisions share a service and retain their worker instead. With `--daemon`, provider ownership belongs to the server and mode changes retain the same model-free relay child. Work remains subject to the server's queue and memory capacity.
 
-Cancelling a Julia decision discards its numerical provider and cached cancellation token. A later decision constructs a fresh provider within the same worker. Successful decisions retain the provider; a cancelled decision therefore changes the next request's loading cost even when the mode stays the same.
+In local mode, cancelling a Julia decision discards its numerical provider and cached cancellation token. A later decision constructs a fresh provider within the same worker. Successful decisions retain the provider; a cancelled decision therefore changes the next request's loading cost even when the mode stays the same.
 
 ## Keep diagnostics away from the screen
 
-The parent owns Ratatui and the optional `--log-file ./captures/session.ndjson` destination. The child sends bounded, versioned protocol replies on stdout. Its stderr carries both tracing and native diagnostics, including Makepad messages that do not use our subscriber.
+The parent owns Ratatui and the optional `--log-file ./captures/session.ndjson` destination. Its child sends bounded, versioned protocol replies on stdout, while stderr carries local worker diagnostics. With `--daemon`, a separate IPC channel first delivers typed request logs to that model-free child. The child forwards each validated source record as `WorkerEvent::DaemonLog` on the private protocol. It does not also print the daemon record on stderr.
+
+The outer reply ID identifies the worker action, while the inner source request ID identifies the daemon operation. The parent checks that the outer ID matches its active action before replay. It consumes the diagnostic frame internally and replays the source record through its subscriber. The [source-aware human formatter](logging.md#present-source-records-at-the-client) presents the original timestamp, target, fields, location and span stack. Parent NDJSON retains structured `daemon_*` metadata, including source timings. Human logs use the terminal ownership buffer.
+
+The internal child deliberately retains compact timestamp-and-level formatting for its own local tracing and native stderr. The parent's line parser preserves recognised tracing levels and captures this text under `worker_log`. Local worker text and typed daemon events are separate delivery routes. See [request-scoped diagnostics](logging.md#forward-one-requests-diagnostics) for source filtering, bounds and closure handling.
 
 Decision paths cross that private JSON boundary as explicit UTF-8 strings, preserving their lexical spelling and rejecting NUL or non-UTF-8 values; the child reconstructs and validates its typed CLI options. Keep boundary types explicit and test their serialized shape and round trip: a reflected `PathBuf` inside CLI configuration is not automatically a usable JSON transport contract.
 
@@ -176,7 +195,7 @@ Session timing uses these explicit boundaries:
 
 These are separate measurements, not durations to add together. The first action's parent clock starts after the initial worker handshake. A process-start measurement must also include that handshake and CLI setup. The TUI currently starts its live busy timer after submission and reports worker duration on completion; script timings are the clearer comparison interface.
 
-For repeated generation measurements without a screen, `benchmark` also uses one service instance and accepts `--context-tokens`. Its typed reports default to text on a terminal and JSON when redirected; `--output-format json` selects JSON explicitly. A separate fresh-client measurement uses `prompt --address`, including its own input and connection time. Read [performance analysis](performance-analysis.md) before comparing cold loading, first-token time and completed inference.
+For repeated generation measurements without a screen, `benchmark` also uses one service instance and accepts `--context-tokens`. Its typed reports default to text on a terminal and JSON when redirected; `--output-format json` selects JSON explicitly. A separate fresh-client measurement uses `prompt --daemon`, including its own input and connection time. Earlier captures used its previous `--address` spelling. Read [performance analysis](performance-analysis.md) before comparing cold loading, first-token time and completed inference.
 
 ## Observe cold loading and resident generation
 

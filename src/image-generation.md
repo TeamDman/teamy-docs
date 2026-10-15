@@ -1,0 +1,20 @@
+# Evaluate image-generation models
+
+Compare image-generation references by output contract, architecture, weight terms and measured resource requirements. Keep a candidate's advertised capabilities separate from source observations and our own inference tests. This survey was reviewed on 13 October 2026; the references below have not been adopted or run locally. For image inputs that produce text, use [Prompt with local images](image-prompts.md).
+
+| Need | Reference | Evidence and limits |
+| --- | --- | --- |
+| Evaluate direct pixel-space generation and reuse its prior for depth/restoration | [Iris-3B](#iris-3b) | No-VAE diffusion transformer; separate downstream fine-tunes. Apache-2.0 code and weights; Python/PyTorch reference, source inspection only. |
+
+## Iris-3B
+
+Evaluate [Iris-3B](https://github.com/speridlabs/iris-3b) when pixel-space generation or reuse of a generative prior for dense vision becomes useful. Source inspected at [`cee0c130a62a9c288ad8918f1f7cdf23cc228d69`](https://github.com/speridlabs/iris-3b/tree/cee0c130a62a9c288ad8918f1f7cdf23cc228d69). Its [transformer implementation](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/src/iris3b/models/dit.py) operates on RGB pixel-space velocities with patch and pixel refinement stages, without a VAE bottleneck. The 3B parameter count excludes the frozen Qwen3-VL-4B-Instruct text encoder. Avoid interpreting the authors' motivation about latent compression as an independently verified image-quality advantage.
+
+The [README](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/README.md) documents text-to-image generation and separately released fine-tunes for relative monocular depth and one-pass restoration/4× upscaling. Depth is affine-invariant relative log depth, not metric distance. Downstream passes use an empty prompt without loading the text encoder; restoration tiles larger outputs. Turbo is a separate full-model 4-step distilled checkpoint; its approximately 0.7-second 1024² result is an upstream H100/batch-4 measurement, not our benchmark. Authors list weaker dense text, seed diversity and occasional grain among Turbo limitations.
+
+The [manifest](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/pyproject.toml) requires Python 3.11+, PyTorch 2.7.1+ and Transformers 4.57+. [Sampling code](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/scripts/sample.py) selects CUDA when available, otherwise CPU, and keeps base weights FP32 with CUDA bf16 autocast. That fallback is source behavior, not a validated CPU performance claim. The documented Gradio demo holds all three models at roughly 45 GB GPU memory, or roughly 20 GB peak with CPU offloading; those figures describe that demo, not a universal minimum. Base/depth/restoration downloads are approximately 12 GB each; Turbo is approximately 6 GB. No local device fit or inference was tested.
+
+Upstream explicitly assigns Apache-2.0 to both repository code and published [weights](https://huggingface.co/speridlabs/iris-3b), rather than a separate restrictive weight license; retain [LICENSE](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/LICENSE) and [NOTICE](https://github.com/speridlabs/iris-3b/blob/cee0c130a62a9c288ad8918f1f7cdf23cc228d69/NOTICE). Third-party dependencies keep their own terms. Status: source-reviewed candidate; no model execution, dependency installation or weight download.
+## Turn a candidate into an implementation
+
+Follow [model adoption](model-adoption.md) before exposing generation through our tools. Record code and weight revisions, preprocessing, sampling settings and output limits. Qualify a small fixed workload for correctness and memory fit, then measure speed on the same device and settings. A model-size label or upstream sample does not establish our latency, quality or safety requirements. [Porting Python ML to Rust](python-ml-to-rust.md) is a separate implementation step after the reference contract is understood.
