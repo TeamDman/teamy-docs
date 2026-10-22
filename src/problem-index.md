@@ -105,6 +105,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | What you want to do | Read this | External references |
 | --- | --- | --- |
 | Make videos with code, reuse React video layouts or animate data | [Make videos with code](making-videos.md) | Remotion; special licensing terms, not an adopted dependency. |
+| Find Motion Canvas examples for code highlighting, signals, camera diagrams or state machines | [Motion Canvas example scenes](making-videos.md#motion-canvas-example-scenes) | Official pinned source reference; examples are not installed or render-tested. |
 | Create explanatory vector motion graphics or synchronize animation with narration | [Compare animation references](making-videos.md) | Motion Canvas TypeScript animation. |
 | Author Rust motion graphics, animate code diffs or present a scene interactively | [Psychopomp](making-videos.md#psychopomp) | Rust scene plans and wgpu rendering; early prototype, upstream tested on macOS/Metal and not locally executed here. |
 | Create Python mathematical animations, evaluate Rust GPU rendering or study 3Blue1Brown's workflow | [Compare Manim editions and ManimGX](making-videos.md) | Manim Community, original Manim/ManimGL and ManimGX; separate APIs, behavior and licensing limits. |
