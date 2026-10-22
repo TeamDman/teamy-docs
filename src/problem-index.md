@@ -7,6 +7,12 @@ Start with the problem you want to solve. This book explains how Teamy projects 
 
 New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Extend those shared capabilities deliberately. For desktop and inference work, reuse the relevant prior art and connect it to our CLI, logging, cancellation and output conventions.
 
+## Writing and review
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Remove AI writing smells, de-slop prose, humanize text or review release notes | [Write and review precise prose](writing-and-review.md) | Imported de-slop and Humanizer source snapshots; fact-preserving review, provenance and profile junction arrangement. |
+
 ## Command-line tools
 
 | What you want to do | Read this | Implementation references |
@@ -34,11 +40,30 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Stop tracing logs from overwriting a TUI, or open a nested picker | [Terminal ownership and logs](terminal-ownership.md) | Cloud-Terrastodon's coordinator, suspension acknowledgements and structured terminal log buffer. |
 | Keep keyboard input responsive while inference or searches run | [Async terminal work](async-terminal-ui.md) | Cloud-Terrastodon's EventStream, generation-tagged candidate handlers and engine/UI separation. |
 
+## Cloud infrastructure and IaC
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Find an Azure reference architecture, Terraform bootstrap or Azure DevOps deployment pipelines | [Reference Architecture](cloud-infrastructure.md#reference-architecture) | Public AAFC-Cloud deployment patterns; external prerequisites and environment adaptation, source review only. |
+| Browse Azure resources, activate PIM or find Azure/Terraform CLI and SDK prior art | [Cloud Terrastodon](cloud-infrastructure.md#cloud-terrastodon) | Public Rust operator tooling; connects its cloud role to the existing CLI, logging and TUI guides. |
+
+## Networks and remote access
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Compare NetBird, Tailscale, a private mesh or public reverse tunnel | [Networking survey](networking-survey.md) | NetBird, Tunnet and OpenTunnel; descriptive evidence, not endorsement or adoption. |
+| Bootstrap a Windows Azure lab VM, keep Tailscale/NetBird connected without login, or use private RDP | [Azure Windows lab access](networking-survey.md#bootstrap-an-azure-windows-lab-vm-then-choose-the-access-path) | Official VM-extension, Windows service/enrollment and RDP guidance; proposed combination, not deployed here. |
+| Keep VM passwords and mesh enrollment keys out of ordinary Terraform output | [IaC credential boundaries](networking-survey.md#keep-windows-passwords-and-enrollment-keys-out-of-ordinary-iac-output) | Protected settings versus plan/state persistence; provider support must be checked. |
+
 ## Desktop applications
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
-| Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, Makepad, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
+| Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, GPUI Fast, Makepad, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
+| Evaluate incremental GPUI layout, retained rendering or a standalone GPUI fork | [GPUI Fast](ui-frameworks.md#gpui-fast) | Reuse unchanged layout and views; surveyed upstream design and performance claims, not adopted or benchmarked here. |
+| Plot Rust datasets, use Polars data or generate chart assets for reports | [Charting references](charts-and-diagrams.md) | Charton's declarative graphics and charts-rs's typed/JSON charts; source-reviewed candidates. |
+| Display Mermaid diagrams or fenced Mermaid Markdown inside egui | [egui-mermaid](charts-and-diagrams.md#egui-mermaid) | Native egui painting of a syntax subset; unsupported kinds and skipped directives need checking. |
+| Compile text diagrams, technical figures or mdBook diagrams to SVG | [Lini](charts-and-diagrams.md#lini) | A separate diagram DSL with SVG/HTML output; graph-layout and text limitations. |
 | Load or extract the EXE icon without another `include_bytes!` embedding | [Executable icons and resources](executable-icons.md) | The template, tb and teamy-windows. |
 | Add a system tray icon to this app | [Windows system tray icons](system-tray.md) | Piing, tb and teamy-windows. |
 | Show a native message box or configuration-error dialog | [Native message boxes](native-message-boxes.md) | Piing's TaskDialogIndirect and Common-Controls v6 manifest. |
@@ -50,6 +75,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
+| OCR scanned PDFs or images on CPU, retain reading order or extract document layout | [Document processing and OCR](document-processing.md#indra-ocr) | Indra OCR implementation, model and discovery post; source-reviewed candidate with distinct code and weight licenses. |
 | Generate images, evaluate Iris-3B or reuse a pixel-space prior for depth/restoration | [Image-generation survey](image-generation.md) | No-VAE architecture, fine-tunes, runtime requirements and source/weight licensing. |
 | Reduce vector memory, compress a semantic-search index or find TurboQuant/MRL prior art | [Vector memory and search compression](native-multimodal-embeddings.md#vector-memory-and-search-compression-references) | Qdrant EmbeddingGemma 2 text-retrieval measurements; optional beta Edge Rust reference, no adoption. |
 | Turn a timeline model announcement into a local Rust tool | [Model adoption workflow](model-adoption.md) | Evidence manifests, typed contracts, reference fixtures and resident speech runtimes. |
@@ -80,6 +106,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | --- | --- | --- |
 | Make videos with code, reuse React video layouts or animate data | [Make videos with code](making-videos.md) | Remotion; special licensing terms, not an adopted dependency. |
 | Create explanatory vector motion graphics or synchronize animation with narration | [Compare animation references](making-videos.md) | Motion Canvas TypeScript animation. |
+| Author Rust motion graphics, animate code diffs or present a scene interactively | [Psychopomp](making-videos.md#psychopomp) | Rust scene plans and wgpu rendering; early prototype, upstream tested on macOS/Metal and not locally executed here. |
 | Create Python mathematical animations, evaluate Rust GPU rendering or study 3Blue1Brown's workflow | [Compare Manim editions and ManimGX](making-videos.md) | Manim Community, original Manim/ManimGL and ManimGX; separate APIs, behavior and licensing limits. |
 
 ## Source and file organization
@@ -105,3 +132,5 @@ Use book search with the operation you want: `EXE icon`, `message box`, `tray ic
 [Find an authored Stack Overflow answer](stackoverflow-prior-art.md) connects earlier answers to their purposes, including EXE icon extraction, terminal colours, UI Automation, Rust and formal languages. Inspect current source before adopting historical examples.
 
 For a constrained grammar, parser, semantic checker or verified state machine, read [formal methods and language implementation](formal-methods.md). It connects Prolog, NuSMV, Alloy and the paused Bend rewrite to their distinct purposes.
+
+For hand-drawn browser animation, timestamp-addressable scene capture and resumable frame rendering, see the [PDoomVideo-inspired pipeline](making-videos.md#pdoomvideo-strategy). Remotion and Psychopomp qualification is recorded in [additional storytelling candidates](making-videos.md#additional-storytelling-candidates).

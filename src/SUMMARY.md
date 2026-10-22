@@ -10,6 +10,7 @@
 # Guides and references
 
 - [Find a solution](problem-index.md)
+- [Write and review precise prose](writing-and-review.md)
 - [Writing programs](writing-programs.md)
   - [Start a Rust project](rust-cli-template.md)
   - [Enforce Rust code standards](code-standards.md)
@@ -24,6 +25,7 @@
       - [Async terminal work](async-terminal-ui.md)
   - [Desktop applications](desktop-applications.md)
     - [Choose a desktop UI framework](ui-frameworks.md)
+    - [Render charts and diagrams](charts-and-diagrams.md)
     - [Executable icons](executable-icons.md)
     - [System tray icons](system-tray.md)
     - [Native message boxes](native-message-boxes.md)
@@ -31,6 +33,7 @@
     - [Screen capture and window observations](screen-capture.md)
     - [Terminal integration](terminal-integration.md)
   - [Machine learning and audio](machine-learning.md)
+    - [Document processing and OCR](document-processing.md)
     - [Score supplied choices](finite-choice-models.md)
     - [Generate text locally](local-text-generation.md)
     - [Connect to resident inference](resident-inference.md)
@@ -52,6 +55,7 @@
   - [Plan an owned email CLI](email-planning.md)
   - [Make videos with code](making-videos.md)
   - [Compare private meshes and public tunnels](networking-survey.md)
+  - [Cloud infrastructure and IaC](cloud-infrastructure.md)
   - [Curate prior art](curating-prior-art.md)
     - [Find an authored Stack Overflow answer](stackoverflow-prior-art.md)
   - [Review plans and retain decisions](plan-records.md)
