@@ -60,6 +60,7 @@
     - [Find an authored Stack Overflow answer](stackoverflow-prior-art.md)
   - [Review plans and retain decisions](plan-records.md)
   - [Evaluate agent harnesses and memory](agent-harnesses.md)
+  - [Work across Codex cloud environments](cloud-environments.md)
   - [Keep a migration aligned and fast](migration-workflows.md)
   - [Formal methods and language implementation](formal-methods.md)
 - [Playing games](playing-games.md)

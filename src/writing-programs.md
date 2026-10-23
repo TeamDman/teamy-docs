@@ -12,6 +12,8 @@ For email inspection, composition, SMTP submission and IMAP synchronization, see
 
 For coding-agent execution and long-lived conversation memory, see [Evaluate agent harnesses and memory](agent-harnesses.md). It distinguishes OpenCode's harness from OptChat's OMP extension and retains their qualification limits.
 
+For reusable coding setups and desktop/cloud handoffs, see [Work across Codex cloud environments](cloud-environments.md). Include this book as a reference checkout in each new Teamy coding environment and verify the actual source revisions before applying its standards.
+
 ## Define the result
 
 A useful problem statement names the actor, input, expected output and relevant constraint:

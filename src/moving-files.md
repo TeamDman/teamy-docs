@@ -4,6 +4,8 @@ When reorganizing existing files, record their exact proposed destinations befor
 
 The implementation is still a local prototype as of 1 October 2026, with no published repository or release. The public book describes its reviewed design and synthetic command examples. Real plans can disclose filenames and storage locations; keep them in records for their intended audience.
 
+A separate [cloud-to-desktop transfer proposal](#proposed-cloud-to-desktop-transfer), dated 2026-10-23, extends the design discussion. It does not add network transfer or execution to the existing planner.
+
 ## Name the plan and its actions separately
 
 `plan create` creates the plan. `plan action add` adds an action inside it. This prevents two similar verbs from hiding which object is being changed.
@@ -65,3 +67,52 @@ Get-Content -Raw examples/move-request.json |
 ```
 
 These are alternative input forms, not two steps to add the same action. UTF-8 JSON is limited to 16 MiB. Unsupported versions, unknown fields/operations and malformed requests fail before the plan update. This command-specific behavior implements the [CLI input conventions](good-cli.md#file-standard-input-and-argument-inputs); the base template does not add it automatically.
+
+## Proposed cloud-to-desktop transfer
+
+**Proposed, 2026-10-23; not implemented or transfer-tested.** Extend Teamy Mover with a native Rust receiver/accept operation on the desktop, confined in Podman, and a cloud sender that initiates an approved outbound connection. This addresses the [managed VPN's direction limits](networking-survey.md#codex-cloud-private-networking) and provides an owned artifact copy without depending on Python Library helpers or a WSL workaround. Current video iteration can continue through the [producing chat](making-videos.md#view-and-deliver-a-cloud-render).
+
+Use [teamy-rust-cli](rust-cli-template.md), first-class Figue arguments, Facet types and a versioned Vox service contract. The existing [Vox log-stream reference](logging.md#elevation-and-daemon-log-forwarding) is prior art for typed communication, not proof of a ready-made secure file-transfer transport. Qualify framing, payload limits, backpressure, cancellation and completion acknowledgements on the chosen proxy/TLS path. A local socket flush must not be reported as a committed remote artifact.
+
+The intended direction is:
+
+```text
+Cloud sender -> approved outbound proxy/VPN path -> desktop Rust receiver
+                                                      |
+                                              dedicated inbox volume
+```
+
+### Establish server trust and upload authority separately
+
+The chosen design terminates TLS inside Rust. Keep the receiver's private key protected on the receiving side; do not send it to the cloud, bake it into an image or write it to logs. Provision the cloud client with a trusted CA certificate and hostname validation, or a deliberately pinned server public key through an authenticated setup channel. Specify certificate/key rotation and verify the actual TLS peer on the approved network path. Do not weaken verification to make a proxy mismatch disappear.
+
+A CSR is a request for certification, containing a public key and signed request information; it is not a trust anchor or proof that a particular server should be trusted. See [PKCS #10 / RFC 2986](https://www.rfc-editor.org/rfc/rfc2986.html). TLS authenticates the selected server and protects the connection; upload authorization remains a separate application decision.
+
+The proposed acceptance operation issues an opaque, unguessable capability after the receiver approves a bounded transfer. Keep the capability out of ordinary URLs and logs. Store its authority on the receiver, including the accepted content identity and limits; the cloud sender cannot broaden them by editing request fields.
+
+| Proposed contract | Receiver responsibility |
+| --- | --- |
+| Size and expiry | Enforce maximum bytes while streaming, expiry and any aggregate quota; reject excess before committing. |
+| Content hash | Bind approval to the expected digest and verify the completed bytes. A matching hash proves agreement with the approved content, not that the content is safe to execute. |
+| Fixed destination root | Choose the inbox destination on the receiver. Reject traversal, symlink/reparse-point escapes and arbitrary sender-supplied host paths. |
+| Idempotency | Bind a retry key to the same capability, digest and destination; return the recorded outcome for an identical retry and reject conflicting reuse. |
+| Atomic commit | Stage inside the destination filesystem, verify length/hash, then commit without exposing partial output or silently overwriting unrelated files. Define crash recovery and durability explicitly. |
+| Bounded authority | Limit reuse, permit revocation and make completion consume or close the grant according to the reviewed contract. Never grant shell execution or general filesystem access. |
+
+These are acceptance requirements for future implementation, not claims about the planning-only prototype. Meaningful tests should cover denied/expired grants, wrong certificates and hashes, oversized uploads, path escapes, cancellation, lost acknowledgements, duplicate retries and interrupted commits. Verify that a following valid transfer still works. Record passed, failed and unrun cases separately.
+
+### Isolate the build and the receiver independently
+
+**Officially documented primitives:** [Podman's runtime options](https://docs.podman.io/en/latest/markdown/podman-run.1.html) include a read-only root filesystem, restricted users/capabilities and explicit volume mounts. [Podman build](https://docs.podman.io/en/latest/markdown/podman-build.1.html) has its own build context, mounts and network controls. Runtime restrictions do not retroactively isolate a build.
+
+**Proposed Teamy boundary:** build reviewed, pinned Rust sources with a minimal context and only the needed dependency access. Treat writable compiler/package caches as a trust boundary: build code can alter their contents and influence a later build. Use dedicated caches with an explicit trust scope, not a shared writable host cache containing unrelated work. Do not expose the host home, container-engine socket or host credentials to either build or runtime.
+
+Run the receiver as an unprivileged user with a read-only image, dropped capabilities, no privilege escalation and bounded temporary storage. Expose only the approved listener and a dedicated inbox as the persistent writable data volume. Deliver only the receiver-specific TLS material through a narrowly scoped secret mechanism; keep the key separate from uploaded data. Do not mount general desktop folders, source trees or unrelated credentials. An upload lands as data in the inbox, not as executable code or an automatically opened file.
+
+[Podman machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html) uses a Linux VM on Windows; the documented providers include WSL and Hyper-V. That container backend is a separate choice from running a Python Library helper inside WSL, which was rejected for this workflow. Qualify the selected backend's volume mapping, ownership and listener reachability; no Windows receiver/container configuration was deployed or tested by this proposal.
+
+### Investigate references without implying adoption
+
+The [Stigmerge README at `8f26b50`](https://github.com/cmars/stigmerge/blob/8f26b50ffa058eaa009c61eccabe32b2a756de4c/README.md), inspected on 2026-10-23, describes file seeding/fetching over Veilid. Fetching peers also seed data. It is a reference for content distribution and peer discovery, with materially different exposure and lifecycle from a single approved inbox upload. [Veilid's own documentation](https://veilid.com/documentation/) describes the underlying distributed networking framework.
+
+Investigate their transport, authorization, integrity and recovery behavior before any adoption. The current cloud proxy restrictions do not establish that an embedded peer network can operate there. Stigmerge and Veilid are research references, not installed components, shipping Teamy integrations or a selected replacement for the outbound receiver design. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) is likewise an optional alternative reference; Rust-owned TLS remains the chosen proposal.

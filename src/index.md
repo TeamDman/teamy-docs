@@ -15,6 +15,8 @@ The software topics are [command-line tools](good-cli.md), [desktop applications
 
 A documented expectation does not mean every existing tool already meets it. Public source snapshots, branch work and local prototypes are identified where their status matters.
 
+For work that continues away from the desktop, read [Work across Codex cloud environments](cloud-environments.md). It explains prepared environments, task isolation, exact revisions and artifact retention, with dated evidence and links to networking and transfer proposals.
+
 This book contains unclassified guidance and synthetic examples approved for a public audience. [Publication and audiences](publication.md) describes that boundary and the GitHub Pages publishing workflow.
 
 Start with the [CLI definition](glossary.md#cli) when the command-line vocabulary is unfamiliar.

@@ -1,6 +1,18 @@
 # Make videos with code
 
-Revisit these references when reusable video layouts, explanatory motion graphics or precise mathematical animation become useful. They are external options, not adopted Teamy dependencies. Initial references were reviewed on 7 October 2026; later additions are dated below. No local rendering or integration was tested.
+Revisit these references when reusable video layouts, explanatory motion graphics or precise mathematical animation become useful. They are external options, not adopted Teamy dependencies. Initial references were reviewed on 7 October 2026; later additions are dated below. The renderer surveys did not test local rendering or integration. The separate delivery observations below concern an existing cloud-produced video.
+
+## View and deliver a cloud render
+
+**Observed, 2026-10-23:** a task-local file link in the producing chat opened and played a rendered video through the app; playback was user-verified. That is distinct from uploading the file into persistent Library storage. A Library upload failure neither establishes a render failure nor proves that task-file viewing is broken. Diagnose generation, playback and transfer separately.
+
+App surfaces vary. A link handled by the owning task is not a promise that a raw workspace URL works in another chat, in an external browser or as an operating-system-local path. For Teamy iteration, prefer returning to the producing chat and its file link. Library remains an optional retention or delivery channel, rather than a mandatory upload for every revision. Preserve valuable final output independently; do not promise either channel retains it forever. Keep private Library download URLs out of public documentation and logs intended for publication.
+
+**Observed transfer limitations, 2026-10-23:** an executor-side HTTP helper encountered a network failure. A native, host-mediated Library upload uses a different path; the helper's result did not establish that host upload would fail. A Windows helper also encountered an `os.setxattr` incompatibility. These are specific helper/runtime observations, not a general statement that rendering, Windows file access or Library is unavailable.
+
+**Working decision:** do not build Teamy's artifact workflow around Python Library helpers or a WSL workaround for those helpers. Use the producing-chat link for current iteration, and evaluate the [proposed Rust-native transfer path](moving-files.md#proposed-cloud-to-desktop-transfer) when an owned desktop copy is needed. No native transfer implementation is claimed here. [Cloud-environment lifecycle](cloud-environments.md) explains why a local render and local commit are separate retention concerns.
+
+## Compare renderer references
 
 | Pressure or purpose | Reference | Suitability and limits |
 | --- | --- | --- |

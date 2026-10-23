@@ -18,6 +18,10 @@ The deployment workflow runs on a push to `main` or manual dispatch. Its build j
 
 Review the source and outgoing commit metadata before pushing. Changes pushed to `main` are published automatically. The site has no sign-in or private-documents area.
 
+**Working policy, 2026-10-23:** publish the exact reviewed and tested commit. Record its full SHA, build/link results and any unrun checks; if integration changes that commit's content, validate the resulting candidate again. A local feature-branch commit is neither a remote backup nor a deployed site. Desktop/cloud handoff goes through GitHub with explicit branch selection; [cloud-environment guidance](cloud-environments.md) covers the separate prepared setup and task state.
+
+Prefer meaningful local/cloud validation over routine CI churn, while retaining the existing Pages publication workflow. CI checks, release jobs, Pages and security automation have distinct responsibilities; reducing redundant checks does not justify disabling all automation.
+
 The workflow does not compile every example. See [plan records and validation](plan-records.md#know-what-the-book-validates) for its current guarantees and the proposed executable-example harness. Private plans and comments can produce a separately approved public decision record; they are not automatically site content.
 
 The default address uses `/teamy-docs/`; `book.toml` records that path so generated 404-page asset links work there. Connecting `docs.teamdman.ca` remains a separate DNS task.

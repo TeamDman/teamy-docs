@@ -47,6 +47,16 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Find an Azure reference architecture, Terraform bootstrap or Azure DevOps deployment pipelines | [Reference Architecture](cloud-infrastructure.md#reference-architecture) | Public AAFC-Cloud deployment patterns; external prerequisites and environment adaptation, source review only. |
 | Browse Azure resources, activate PIM or find Azure/Terraform CLI and SDK prior art | [Cloud Terrastodon](cloud-infrastructure.md#cloud-terrastodon) | Public Rust operator tooling; connects its cloud role to the existing CLI, logging and TUI guides. |
 
+## Cloud coding and artifact handoff
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Update Teamy Docs without a desktop, prepare a coding environment or reuse a saved setup | [Codex cloud environments](cloud-environments.md) | Official lifecycle and 2026-10-23 observations; include the docs reference checkout in every new Teamy coding environment. |
+| Check the actual SHA, select a branch or synchronize desktop and cloud work | [Select an exact revision](cloud-environments.md#select-and-test-an-exact-revision) | Explicit fetch/branch selection, preservation of dirty work and publication from the tested commit; no verified latest-branch freshness guarantee. |
+| Recover task files, retain a render or decide whether a local commit is backed up | [Retain code and artifacts](cloud-environments.md#retain-code-and-artifacts-independently) | Bounded VM recovery, GitHub handoff and independent artifact retention; Library is optional. |
+| Open a cloud video, find its producing-chat link or diagnose a Library upload failure | [View and deliver a cloud render](making-videos.md#view-and-deliver-a-cloud-render) | User-verified app playback; task links, host uploads and executor helpers have separate outcomes. |
+| Receive a cloud artifact on a desktop without Python/WSL Library helpers | [Teamy Mover transfer proposal](moving-files.md#proposed-cloud-to-desktop-transfer) | Unimplemented Rust/Facet/Vox sender and restricted Podman receiver; bounded acceptance capability, TLS and integrity requirements. |
+
 ## Networks and remote access
 
 | What you want to do | Read this | References and status |
@@ -54,6 +64,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Compare NetBird, Tailscale, a private mesh or public reverse tunnel | [Networking survey](networking-survey.md) | NetBird, Tunnet and OpenTunnel; descriptive evidence, not endorsement or adoption. |
 | Bootstrap a Windows Azure lab VM, keep Tailscale/NetBird connected without login, or use private RDP | [Azure Windows lab access](networking-survey.md#bootstrap-an-azure-windows-lab-vm-then-choose-the-access-path) | Official VM-extension, Windows service/enrollment and RDP guidance; proposed combination, not deployed here. |
 | Keep VM passwords and mesh enrollment keys out of ordinary Terraform output | [IaC credential boundaries](networking-survey.md#keep-windows-passwords-and-enrollment-keys-out-of-ordinary-iac-output) | Protected settings versus plan/state persistence; provider support must be checked. |
+| Understand Codex Tailscale reachability, task ingress, CONNECT, allowlists or ephemeral nodes | [Codex cloud private networking](networking-survey.md#codex-cloud-private-networking) | Official outbound HTTP(S) guidance and dated sidecar observations; separate network permission, VPN grants, TLS and application authorization. |
 
 ## Desktop applications
 

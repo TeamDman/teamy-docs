@@ -8,6 +8,36 @@ OpenTunnel and Tunnet reviewed 14 October 2026; NetBird and the Azure Windows la
 
 Discovery provenance supplied for this survey: [OpenTunnel via thdxr on X](https://x.com/thdxr/status/2107956848318177622) and [Tunnet via orielhaim on X](https://x.com/orielhaim/status/2107984883964403791). These are discovery links, not technical evidence; their contents were not verified.
 
+## Codex cloud private networking
+
+Added **2026-10-23**. The official service contract, observations from the inspected Teamy setup and a future transfer design have different evidence. Do not apply the general mesh comparisons below as though a managed cloud task exposed every feature of an ordinary Tailscale installation.
+
+### Officially documented access
+
+OpenAI documents outbound access to private HTTP(S) services through the environment's configured proxy and Tailscale VPN. Destinations need both environment-network permission and VPN access rules. Setup changes should be published and checked in a new task. This does not document desktop-to-task port mapping. Source: [Cloud environments: private networking](https://learn.chatgpt.com/docs/environments/cloud-environments#private-networking-vpn).
+
+[Tailscale's ephemeral-node documentation](https://tailscale.com/docs/features/ephemeral-nodes) explains automatic removal after inactivity and identifies ephemeral nodes with an admin-console badge. Ephemeral enrollment and key expiry are separate lifecycle properties; disabling key expiry does not turn an ephemeral node into a permanent one. See also [Tailscale auth keys](https://tailscale.com/docs/features/access-control/auth-keys).
+
+### Observed managed-sidecar limits
+
+The inspected setup used a managed Tailscale sidecar for **task-initiated outbound** HTTP(S), with approved raw TCP through CONNECT also described by its runtime guidance. That setup explicitly excluded inbound connections, UDP, QUIC, ICMP and transparent routing from the task. No supported desktop-to-task port-mapping surface was exposed. These are dated setup observations; raw CONNECT support is not claimed as a broader public product guarantee.
+
+A node's appearance in a tailnet does not establish that a desktop can connect to a task listener. The observed tagged nodes were ephemeral. “Online” reports network presence, not an active task CPU or durable task storage. Before removing a node, establish which task or service owns it and whether it is still needed. Do not blindly delete unmapped nodes to tidy the device list.
+
+### Keep the network gates separate
+
+The destination allowlist, VPN ACLs/grants, application authentication and TLS trust each answer a different question. An allowed domain does not grant VPN permission, a VPN connection does not authorize an upload, and successful routing does not validate a server certificate.
+
+In the inspected runtime guidance, raw TCP CONNECT was an opaque byte tunnel; the HTTPS proxy path could intercept TLS. A certificate-pinning design therefore needs qualification on the selected, approved path. Consult current runtime proxy guidance rather than assuming a direct socket works or that every CONNECT request has the same interception behavior. Do not use proxy bypasses or `--noproxy` to evade the configured route or policy.
+
+Newly published settings were not observed to affect an existing task. Preserve its files and test a fresh task against the exact approved destination before changing more policy. Record the layer and outcome of each check: destination policy, VPN access, TLS identity and application response. A failed request at one layer does not diagnose all the others.
+
+Changing which peer initiates a connection needs a separately reviewed, narrow grant for that source, receiver and port. A rule permitting desktop-initiated traffic does not automatically permit cloud-initiated traffic. Authorizing reply traffic on an existing connection is different from authorizing a new connection in the reverse direction.
+
+### Proposed transfer direction
+
+The [Teamy Mover proposal](moving-files.md#proposed-cloud-to-desktop-transfer) puts a receiver on the desktop and sends from the cloud over approved outbound access. It does not depend on task ingress. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) is a documented alternative for exposing a local service to a tailnet; it is retained as an optional reference, not the selected TLS-termination design or a tested integration. The current design choice keeps TLS termination inside Rust.
+
 ## OpenTunnel: public TLS ingress
 
 The [official README](https://github.com/anomalyco/opentunnel/blob/0cad49c74303bfdb2c0495e9c58fd1bdb9d619db/README.md) describes a blind TLS tunnel: public TCP/443 traffic is routed by TLS ClientHello/SNI through a bridge to the local client, which holds the certificate key, terminates TLS and forwards plaintext to a selected local port. It supports HTTPS use cases, but the protocol can carry other application protocols inside TLS; this is not an IP mesh VPN.
