@@ -72,9 +72,9 @@ These are alternative input forms, not two steps to add the same action. UTF-8 J
 
 **Proposed, 2026-10-23; not implemented or transfer-tested.** Extend Teamy Mover with a native Rust receiver/accept operation on the desktop, confined in Podman, and a cloud sender that initiates an approved outbound connection. This addresses the [managed VPN's direction limits](networking-survey.md#codex-cloud-private-networking) and provides an owned artifact copy without depending on Python Library helpers or a WSL workaround. Current video iteration can continue through the [producing chat](making-videos.md#view-and-deliver-a-cloud-render).
 
-Use [teamy-rust-cli](rust-cli-template.md), first-class Figue arguments, Facet types and a versioned Vox service contract. The existing [Vox log-stream reference](logging.md#elevation-and-daemon-log-forwarding) is prior art for typed communication, not proof of a ready-made secure file-transfer transport. Qualify framing, payload limits, backpressure, cancellation and completion acknowledgements on the chosen proxy/TLS path. A local socket flush must not be reported as a committed remote artifact.
+Use [teamy-rust-cli](rust-cli-template.md), first-class Figue arguments, Facet types and a versioned Vox service contract. Propose two transport adapters: direct Vox over TLS through approved CONNECT where required, and a future Veilid adapter. Both share the same Facet/Vox upload service, authorization, integrity, idempotency and atomic-commit semantics; neither is implemented or tested. The existing [Vox log-stream reference](logging.md#elevation-and-daemon-log-forwarding) is prior art for typed communication, not proof of a ready-made secure file-transfer transport. Qualify framing, payload limits, backpressure, cancellation and completion acknowledgements for each adapter. A local socket flush must not be reported as a committed remote artifact.
 
-The intended direction is:
+The direct adapter's intended direction is:
 
 ```text
 Cloud sender -> approved outbound proxy/VPN path -> desktop Rust receiver
@@ -84,7 +84,7 @@ Cloud sender -> approved outbound proxy/VPN path -> desktop Rust receiver
 
 ### Establish server trust and upload authority separately
 
-The chosen design terminates TLS inside Rust. Keep the receiver's private key protected on the receiving side; do not send it to the cloud, bake it into an image or write it to logs. Provision the cloud client with a trusted CA certificate and hostname validation, or a deliberately pinned server public key through an authenticated setup channel. Specify certificate/key rotation and verify the actual TLS peer on the approved network path. Do not weaken verification to make a proxy mismatch disappear.
+The direct adapter terminates TLS inside Rust. Keep the receiver's private key protected on the receiving side; do not send it to the cloud, bake it into an image or write it to logs. Provision the cloud client with a trusted CA certificate and hostname validation, or a deliberately pinned server public key through an authenticated setup channel. Specify certificate/key rotation and verify the actual TLS peer on the approved network path. Do not weaken verification to make a proxy mismatch disappear.
 
 A CSR is a request for certification, containing a public key and signed request information; it is not a trust anchor or proof that a particular server should be trusted. See [PKCS #10 / RFC 2986](https://www.rfc-editor.org/rfc/rfc2986.html). TLS authenticates the selected server and protects the connection; upload authorization remains a separate application decision.
 
@@ -111,8 +111,10 @@ Run the receiver as an unprivileged user with a read-only image, dropped capabil
 
 [Podman machine](https://docs.podman.io/en/latest/markdown/podman-machine.1.html) uses a Linux VM on Windows; the documented providers include WSL and Hyper-V. That container backend is a separate choice from running a Python Library helper inside WSL, which was rejected for this workflow. Qualify the selected backend's volume mapping, ownership and listener reachability; no Windows receiver/container configuration was deployed or tested by this proposal.
 
-### Investigate references without implying adoption
+### Propose a Veilid adapter; retain Stigmerge as a reference
 
-The [Stigmerge README at `8f26b50`](https://github.com/cmars/stigmerge/blob/8f26b50ffa058eaa009c61eccabe32b2a756de4c/README.md), inspected on 2026-10-23, describes file seeding/fetching over Veilid. Fetching peers also seed data. It is a reference for content distribution and peer discovery, with materially different exposure and lifecycle from a single approved inbox upload. [Veilid's own documentation](https://veilid.com/documentation/) describes the underlying distributed networking framework.
+The [Stigmerge README at `8f26b50`](https://github.com/cmars/stigmerge/blob/8f26b50ffa058eaa009c61eccabe32b2a756de4c/README.md), inspected on 2026-10-23, describes file seeding/fetching over Veilid. Fetching peers also seed data. Stigmerge remains reference-only for content distribution and peer discovery, with materially different exposure and lifecycle from a single approved inbox upload; no Stigmerge integration is proposed.
 
-Investigate their transport, authorization, integrity and recovery behavior before any adoption. The current cloud proxy restrictions do not establish that an embedded peer network can operate there. Stigmerge and Veilid are research references, not installed components, shipping Teamy integrations or a selected replacement for the outbound receiver design. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) is likewise an optional alternative reference; Rust-owned TLS remains the chosen proposal.
+**Desired future adapter, 2026-10-23:** Veilid would carry the same upload service alongside the direct adapter. Its [routing documentation](https://veilid.gitlab.io/developer-book/concepts/private-routing.html) distinguishes safety routes, designed to protect the sender's network location, from private routes, designed to protect the receiver's location. Neither is synonymous with a private tailnet link. The adapter needs bounded message fragmentation and reassembly, ordering, deduplication and backpressure, plus an independently verified identity bootstrap binding the intended peer to the upload authority. Route discovery alone does not establish that identity.
+
+This adapter is proposed, not implemented or tested. Qualify Veilid's networking and message behavior in the target environment; do not assume direct one-hop cloud connectivity or stock Veilid support for the platform's CONNECT path. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) remains an optional alternative reference; Rust-owned TLS remains the direct adapter's chosen termination design.

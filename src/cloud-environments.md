@@ -32,14 +32,18 @@ git log -1 --oneline
 
 Preserve dirty work in its existing branch/worktree or an independently saved copy before changing the checkout. Review untracked and ignored files too; see [repository hygiene](repository-hygiene.md). Do not use a blind hard reset or cleanup to make setup look reproducible.
 
-In a clean checkout of `TeamDman/teamy-docs`, this example fetches and explicitly selects the remote `main` snapshot for a new feature branch. Choose an unused branch name:
+In a clean checkout of `TeamDman/teamy-docs`, this example explicitly fetches `main` into its remote-tracking ref, independently of configured fetch refspecs. It compares the fetched SHA with a fresh remote observation before creating a branch at that exact commit. Choose an unused branch name:
 
 ```sh
-git fetch origin
-git rev-parse origin/main
-git switch --no-track -c docs/cloud-workflow origin/main
+git fetch origin refs/heads/main:refs/remotes/origin/main &&
+fetched_main=$(git rev-parse --verify refs/remotes/origin/main) &&
+remote_main=$(git ls-remote --exit-code origin refs/heads/main) &&
+test "$fetched_main" = "${remote_main%%[[:space:]]*}" &&
+git switch --no-track -c docs/cloud-workflow "$fetched_main" &&
 git rev-parse HEAD
 ```
+
+The comparison extracts the SHA before the remote output's whitespace. Any failed command or mismatch stops the chain. If `main` moved between fetch and comparison, repeat the fetch and check; agreement is evidence at that observation time, not a freshness guarantee afterward. Inspect a rejected fetch update before deciding how to reconcile it; do not force an update or reset dirty work blindly.
 
 Fetch updates remote-tracking references; it does not merge the current branch. Review the selected commit, make scoped changes, run the existing build/link checks and commit. Record the full resulting SHA and confirm a clean working tree. Publish an environment from the exact tested commit. If a later fetch, merge or edit changes the candidate, validate that resulting state before publishing it. Repository publication separately needs the intended branch, reviewed outgoing content and authorization.
 

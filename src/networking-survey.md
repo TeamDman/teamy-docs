@@ -36,7 +36,7 @@ Changing which peer initiates a connection needs a separately reviewed, narrow g
 
 ### Proposed transfer direction
 
-The [Teamy Mover proposal](moving-files.md#proposed-cloud-to-desktop-transfer) puts a receiver on the desktop and sends from the cloud over approved outbound access. It does not depend on task ingress. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) is a documented alternative for exposing a local service to a tailnet; it is retained as an optional reference, not the selected TLS-termination design or a tested integration. The current design choice keeps TLS termination inside Rust.
+The [Teamy Mover proposal](moving-files.md#proposed-cloud-to-desktop-transfer) puts a receiver on the desktop and sends from the cloud over approved outbound access. Its direct adapter does not depend on task ingress; a desired future Veilid adapter needs separate network qualification. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) is a documented alternative for exposing a local service to a tailnet; it is retained as an optional reference, not the selected TLS-termination design or a tested integration. The direct adapter keeps TLS termination inside Rust. Both adapters remain unimplemented.
 
 ## OpenTunnel: public TLS ingress
 
