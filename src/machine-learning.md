@@ -7,6 +7,7 @@ When a model or Python demonstration becomes useful, our target is a Rust progra
 | Turn an announcement into reproducible local inference | [Model adoption workflow](model-adoption.md) | Evidence capture, typed contracts, terminal services and parity gates. |
 | Score supplied choices or compare Julia, Qwen and Clef | [Finite-choice decisions](finite-choice-models.md) | Trained heads, restricted label logits, input reuse and explicit visual capabilities. |
 | Select an inference backend and device | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber. |
+| Create timed video sound effects or inspect a soundtrack's waveform, spectrogram and critique | [Earshot production reference](making-videos.md#earshot-sound-effects-and-audio-review) | External Python/CPU tool; model-free sound kits and model-backed analysis, surveyed without execution or adoption. |
 | Extract text and layout from PDFs or scans with CPU OCR | [Document processing and OCR](document-processing.md) | Indra OCR implementation, model card, CPU scope and separate code/weight licenses; surveyed reference. |
 | Generate images or evaluate a pixel-space vision prior | [Evaluate image-generation models](image-generation.md) | Iris-3B generation, depth and restoration; source-reviewed candidate. |
 | Describe an image or compare screenshots | [Prompt with local images](image-prompts.md) | Liquid prompt rendering and the Makepad vision encoder and projector. |
