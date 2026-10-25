@@ -56,6 +56,15 @@ Separate the [engine](https://bevy.org/) from its built-in UI and from [bevy_egu
 
 The [manifest](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/Cargo.toml) identifies 0.19.1 and MIT OR Apache-2.0. [Async task examples](https://github.com/bevyengine/bevy/blob/b56fc29d3016e641754765244b5ba3f9cc504671/examples/async_tasks/async_compute.rs) return worker results to ECS updates. Our older [utility-app manifest](https://github.com/TeamDman/sample-bevy-utility-app/blob/0762d5d3873c58bf6cf3209d0c335bc217250c22/Cargo.toml) pins 0.17.0-rc.1, so newer UI facilities do not automatically exist there. Budget engine/plugin migrations; choose this scope when scene rendering earns it.
 
+### Cursor Hero v2 modeling references
+
+Review these references early when the Cursor Hero v2 Bevy modeling work resumes, before choosing an approach to human anatomy, articulation and motion.
+
+- [MS-Human-700](https://github.com/LNSGroup/MS-Human-700): candidate prior art for human body structure and movement. The [README at `2d68695`](https://github.com/LNSGroup/MS-Human-700/blob/2d686957aefd5739cf4d2859a6acfd94c8f84400/README.md), reviewed on 25 October 2026, describes MuJoCo XML and assets for a whole-body musculoskeletal model with 700 muscle actuators, plus separate legs-locomotion and right-arm/hand manipulation variants. Bevy integration and suitability for Cursor Hero v2 have not been evaluated.
+- [Related X post by @jaskirat](https://x.com/jaskirat/status/2114193087253913639?s=20): unverified related reference. Retrieval returned HTTP 403 on 25 October 2026; its contents and relationship to MS-Human-700 remain unverified. Revisit the exact link during the early review.
+
+Status: reference indexing only, with no model adoption. This entry does not authorize downloading or running model software.
+
 ## egui and eframe
 
 [egui](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/README.md) builds UI and meshes; [eframe](https://docs.rs/eframe/latest/eframe/) hosts applications using window/input integration and wgpu or glow rendering. Using egui inside an existing renderer is a different ownership decision from starting an eframe application. State lives in application Rust data; communicate with workers through channels or promises and request repaint when results arrive.

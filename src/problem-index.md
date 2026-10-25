@@ -60,6 +60,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
 | Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, GPUI Fast, Makepad, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
+| Resume Cursor Hero v2 Bevy modeling, human anatomy, articulation or motion work | [Review modeling references early](ui-frameworks.md#cursor-hero-v2-modeling-references) | MS-Human-700 README reviewed; related X post unverified. Revisit both early when work resumes; no adoption. |
 | Evaluate incremental GPUI layout, retained rendering or a standalone GPUI fork | [GPUI Fast](ui-frameworks.md#gpui-fast) | Reuse unchanged layout and views; surveyed upstream design and performance claims, not adopted or benchmarked here. |
 | Plot Rust datasets, use Polars data or generate chart assets for reports | [Charting references](charts-and-diagrams.md) | Charton's declarative graphics and charts-rs's typed/JSON charts; source-reviewed candidates. |
 | Display Mermaid diagrams or fenced Mermaid Markdown inside egui | [egui-mermaid](charts-and-diagrams.md#egui-mermaid) | Native egui painting of a syntax subset; unsupported kinds and skipped directives need checking. |
