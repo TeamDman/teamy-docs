@@ -13,6 +13,27 @@ Both skills are imported for prose review. Their source files and licenses have 
 
 `de-slop` uses draft, audit, rewrite and verification passes. In review mode, it reports the location, reason and concrete replacement for each issue. Humanizer preserves supported claims, compares the rewrite with the source and uses a writing sample when supplied. Technical and reference prose stays plain and neutral.
 
+## Scholarly prose cleanup reference
+
+Gappy / Giuseppe Paleologo shared `scholarly-paper-revision` in this [original X post](https://x.com/__paleologo/status/2116602494428299632?a=ea7Whx5bm7jutO9rS3k&s=20), linking to the matching [Google Drive folder](https://drive.google.com/drive/mobile/folders/19lfb0LfbD8ASkcPtbXk2vTXHVJkLUtDj?usp=drive_link&pli=1). The [original direct download link](https://drive.usercontent.google.com/download?id=1LWhlrN4um6POdyHJ3QYER_s2bNVMYORm&export=download&authuser=0) provides another source entry point. The resource covers scholarly revision and LaTeX workflows as well as prose cleanup. Its role here is an attributed editorial reference; the skill and its helpers have not been imported, installed or executed. No explicit reuse license was found.
+
+Useful guidance for a prose review:
+
+- Preserve the author's meaning, voice, qualifications and technical precision.
+- Cut filler, repeated caveats, unnecessary recaps, promotional claims and unsupported attribution.
+- Explain the subject concretely. Remove slogans, forced metaphors and theatrical corrections when they obscure the point.
+- Vary structure where it helps the reader; avoid mechanically repeated sentence patterns, transitions, headings and takeaways.
+- Apply editorial judgment to the passage rather than treating words as a blacklist or using style as an AI-authorship detector.
+- Stay within the requested revision scope and verify claims and citations against their sources.
+
+### Reviewed source and limits
+
+On 2026-10-31, a static review covered all seven listed files and found no obvious malicious instructions or exfiltration. Six originals were read fully: `SKILL.md` (10,649 bytes), `agents/openai.yaml` (128), `assets/newcommands.tex` (20,425), `assets/survey-template.tex` (1,093), `references/latex-workflow.md` (1,911) and `references/teaching-and-review.md` (5,719). The reviewed `SKILL.md` SHA-256 is `590cdcdf682986d3bd16580143af038aab7e45df71e6bff46a139d5ce46ac2b2`.
+
+The seventh file, `scripts/build_survey.py`, was reviewed through its complete 4,883-character Drive text preview. Its original download bytes were not independently verified: Drive displayed an executable-file warning, which was not accepted. The preview uses Python's standard library and invokes `latexmk`, a TeX engine and `pdfinfo`; no network or installation code was seen. It writes build artifacts and provides no sandbox: despite `no-shell-escape`, `latexmk` rc files remain enabled, output location is unrestricted and subprocesses have no timeouts. The helper is not included here.
+
+This inspection does not guarantee execution safety or establish writing quality. Future source revisions fall outside the review; the Drive links are mutable references.
+
 ## Review a technical release report
 
 For each change, state the situation, observed behavior and expected behavior. Name the component or operation that performs the action. Explain what changes for the user, then give the evidence needed to assess it.
