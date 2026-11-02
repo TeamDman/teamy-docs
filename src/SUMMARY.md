@@ -25,6 +25,7 @@
       - [Async terminal work](async-terminal-ui.md)
   - [Desktop applications](desktop-applications.md)
     - [Choose a desktop UI framework](ui-frameworks.md)
+    - [egui and eframe in Teamy projects](egui-eframe.md)
     - [Render charts and diagrams](charts-and-diagrams.md)
     - [Executable icons](executable-icons.md)
     - [System tray icons](system-tray.md)

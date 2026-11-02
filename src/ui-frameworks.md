@@ -2,7 +2,7 @@
 
 Choose the UI layer around the application's work: forms and tables, diagnostic controls, or a continuously rendered scene. For our Windows desktop tools, evaluate egui/eframe for compact diagnostic surfaces, Iced for message-driven applications, and GPUI Kit for richer tables, editors and docking. Makepad is a candidate when custom shader styling and shared native/mobile code justify learning its runtime. Bevy fits applications whose core is a scene or simulation. Raw DirectX fits a deliberate graphics implementation or learning exercise with a budget to own the surrounding UI.
 
-These are evaluation candidates, not adopted Teamy dependencies or a performance ranking. Reviewed on 11 October 2026 using existing source snapshots and current official sources; GPUI Fast added from official repository evidence on 18 October 2026. No framework builds, accessibility tests, device trials or benchmarks were run for this comparison. Maintenance assessments below are our inference from the layers each option requires us to own.
+This is a framework comparison, not a performance ranking or a universal Teamy dependency policy. CM and Teamy Hyper Backup Explorer already use egui/eframe; see [their implementation references](egui-eframe.md). The other entries are candidates for the problems discussed here, not a claim of adoption. Reviewed on 11 October 2026 using existing source snapshots and current official sources; GPUI Fast added from official repository evidence on 18 October 2026. No framework builds, accessibility tests, device trials or benchmarks were run for this comparison. Maintenance assessments below are our inference from the layers each option requires us to own.
 
 ## Compare the application layers
 
@@ -70,6 +70,8 @@ Status: reference indexing only, with no model adoption. This entry does not aut
 [egui](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/README.md) builds UI and meshes; [eframe](https://docs.rs/eframe/latest/eframe/) hosts applications using window/input integration and wgpu or glow rendering. Using egui inside an existing renderer is a different ownership decision from starting an eframe application. State lives in application Rust data; communicate with workers through channels or promises and request repaint when results arrive.
 
 The [local snapshot manifest](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/Cargo.toml) identifies 0.33.3, MIT OR Apache-2.0. [eframe features](https://github.com/emilk/egui/blob/44cdd653e2317d300fb8a6c9c36b03f23991e803/crates/eframe/Cargo.toml) enable AccessKit by default. Verify semantics of custom widgets as well as built-in controls; native support does not make web or Android accessibility equivalent. Budget version migrations and any external table, dock or plotting libraries.
+
+For existing Teamy applications and the logging-widget boundary, see [egui and eframe in Teamy projects](egui-eframe.md).
 
 ## Iced
 
