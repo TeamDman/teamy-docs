@@ -38,6 +38,8 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Return results to scripts and people | [Typed results and errors](output-shape.md) | The template and the local mover prototype. |
 | Add a TUI, picker or interactive prompt | [Interactive terminal interfaces](terminal-interfaces.md) | Ratatui, Cloud-Terrastodon's pick/browser, teamy-tts and Ollama; K9s navigation reference. |
 | Stop tracing logs from overwriting a TUI, or open a nested picker | [Terminal ownership and logs](terminal-ownership.md) | Cloud-Terrastodon's coordinator, suspension acknowledgements and structured terminal log buffer. |
+| Show logs in terminal scrollback above a live Ratatui view | [Inline logs above a view](terminal-ownership.md#put-logs-above-an-inline-view) | Cloud-Terrastodon's native formatted output and Ratatui's insert-before example; bounded shared baseline remains proposed. |
+| Track shared terminal, tray, elevation and service foundations across Teamy apps | [Terminal and Windows foundation roadmap](terminal-foundation-roadmap.md) | Teamy Codex first slice, optional template extraction and planned Defibrillator consumer. |
 | Keep keyboard input responsive while inference or searches run | [Async terminal work](async-terminal-ui.md) | Cloud-Terrastodon's EventStream, generation-tagged candidate handlers and engine/UI separation. |
 
 ## Cloud infrastructure and IaC
@@ -74,6 +76,8 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Embed a terminal or run an interactive child process | [Terminal integration](terminal-integration.md) | Teamy-Studio's PTY, terminal core and rendering boundary. |
 
 ## Machine learning and audio
+
+For offline interface sounds and an isolated render worker, see [Generate offline sound effects](sound-effects.md).
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |

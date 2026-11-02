@@ -4,6 +4,7 @@ When a model or Python demonstration becomes useful, our target is a Rust progra
 
 | Need | Start here | Prior art |
 | --- | --- | --- |
+| Render short offline sound effects in an isolated container | [Generate offline sound effects](sound-effects.md) | Earshot sound bank and a qualified local Podman experiment. |
 | Turn an announcement into reproducible local inference | [Model adoption workflow](model-adoption.md) | Evidence capture, typed contracts, terminal services and parity gates. |
 | Score supplied choices or compare Julia, Qwen and Clef | [Finite-choice decisions](finite-choice-models.md) | Trained heads, restricted label logits, input reuse and explicit visual capabilities. |
 | Select an inference backend and device | [GPU-enabled inference](gpu-inference.md) | teamy-tts and teamy-transcriber. |
