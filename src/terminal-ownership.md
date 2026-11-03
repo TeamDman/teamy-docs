@@ -14,6 +14,11 @@ The local [Teamy CLI template](rust-cli-template.md) has optional, caller-owned 
 
 Track the shared work and its implementation status in the [terminal and Windows foundation roadmap](terminal-foundation-roadmap.md).
 
+Closing a console can terminate processes attached to it. The proposed
+[separate console UI process](#keep-the-tray-owner-alive-when-the-console-closes) keeps the tray owner and
+worker outside that console so closing the UI can leave the application alive;
+this is not yet implemented or live-qualified.
+
 ## Transfer ownership after restoration
 
 The coordinator uses a stack of owners. A nested acquisition asks the current owner to suspend. The child receives control only after the parent has acknowledged suspension. Releasing the child waits for its parent to resume. The handoff is cooperative; it cannot stop arbitrary code that ignores the coordinator.
@@ -61,3 +66,130 @@ Exclusive ownership applies to terminal output from both stdout and stderr, beca
 Third-party code can bypass `tracing` and write directly to stderr. Subscriber buffering cannot intercept those bytes. Route that library's diagnostics through a callback when available, select its quiet logging configuration, or capture an isolated child's output. Do not claim a screen is protected solely because our own subscriber is guarded.
 
 When another process needs interactive access, first restore and suspend the current interface, run the child with the intended terminal connection, then reinitialize the view. A child that needs an independent terminal requires a [PTY](terminal-integration.md), not just another terminal guard.
+
+## Keep the tray owner alive when the console closes
+
+This is a proposed shared contract and test plan, not an implemented or
+live-qualified capability. In the current local Codex tray mode (`151f30a`),
+the telemetry receiver, tray and allocated console share one process. The
+local Defibrillator tray prototype (`7aaa240`) also owns its terminal in the
+process that owns its runtime. Hiding a window is useful, but neither path
+establishes that closing the console window leaves the application running.
+Windows sends `CTRL_CLOSE_EVENT` to processes attached to the console; its
+documented handler contract describes cleanup before termination, including
+when a handler returns true. See [HandlerRoutine](https://learn.microsoft.com/en-us/windows/console/handlerroutine).
+
+[Piing's tray implementation](https://github.com/AAFC-Cloud/piing/blob/d2c506520cb6dc8b1d51ba2b2cd0b7681268e6f9/src/tray/window_proc.rs)
+distinguishes inherited, detached and owned consoles and replays buffered logs
+when it creates one. [tb's tray implementation](https://github.com/TeamDman/tb/blob/975848fb27c0564cf029e96e1acf3e90e26b83a9/src/tray.rs)
+allocates and detaches its console and routes console control events toward
+tray shutdown. They are useful prior art for ownership and replay, not evidence
+that closing a same-process console preserves a background worker.
+
+### Proposed boundary
+
+Use an unelevated, Windows-subsystem tray **owner** that is not attached to the
+UI console. It owns the application runtime, tray, input or telemetry sources,
+bounded history, optional file sinks and shutdown. A separately spawned
+console-subsystem **UI child** owns one dedicated console, its Ratatui view,
+raw mode and input. Closing that console may end the child; the owner observes
+the child exit, keeps its own work running, and allows Show to create a new UI.
+Do not rely on a console-close handler to keep the owner alive.
+
+The ordinary attached-terminal commands remain ordinary foreground commands.
+In tray mode, `q` closes the UI while the tray owner remains active; the tray's
+explicit Exit action stops the application. Hide requests an orderly UI close;
+Show reopens it. These tray-mode semantics are proposed and differ from the
+current single-process Codex command, where `q` exits telemetry. Never hide a
+shared parent terminal. The background owner must not remain attached to the
+console whose closure it is meant to survive. Process jobs, terminal-host
+lifetime, Windows sign-out and system shutdown can impose additional limits;
+qualify the actual launch environment rather than claiming survival in all
+circumstances.
+
+Use one child at a time, tracked by the actual child handle and an owner-assigned
+generation. Model `Closed`, `Starting`, `Open`, `Closing` and `Stopped`.
+Repeated Show during `Starting` or `Open` coalesces; wait for the previous
+child to exit and be reaped before spawning a replacement. Show during
+`Closing` records one pending reopen, which runs only after that exit. Ignore messages
+from an old generation. A failed spawn, broken channel or unresponsive close
+is reported and must not silently create a duplicate child. Do not kill an
+unrelated process or infer ownership from a title or PID alone. On owner exit,
+request child shutdown and wait for a bounded interval; the child also exits
+on control-channel EOF. Failure to complete cleanup is reported rather than
+presented as success.
+
+### IPC and bounded replay
+
+Start with two inherited anonymous pipes dedicated to the spawned child, not a
+public network listener. Use a versioned, length-delimited typed protocol with
+strict frame and queue limits. Restrict handle inheritance to the intended pipe
+ends; close duplicate ends promptly so EOF is meaningful, and verify the actual
+Windows spawn implementation rather than assuming a generic process launcher
+provides a handle allowlist. The owner launches a known bundled UI executable
+without a shell or caller-provided executable path. It accepts only explicit
+application-defined intents, never command strings to execute. An unauthenticated
+named pipe is not a substitute for these inherited channels.
+
+The minimum exchange is `Hello`/`Ready` with protocol version and generation,
+`Snapshot`/`Record` with sequence numbers and loss indicators, `Ack`, and
+typed application intents. Keep control messages separate from terminal text.
+The owner is the source of truth: it continues receiving events while no UI is
+open, keeps a bounded ring with explicit eviction and truncation counters, and
+never blocks the receiver or recovery loop on a slow UI. Reopening requests a
+snapshot of retained records, followed by live records. A per-child bounded
+delivery queue reports gaps; it must not convert a slow child into unbounded
+memory growth. An acknowledgement means the child actually presented a record;
+it does not erase the owner's retained history. Reopening can display retained
+history again, and records already evicted are explicitly unavailable. File
+logging and sensitive event retention remain separate opt-in policies.
+The template's existing `TerminalLogBuffer::acknowledge` removes delivered
+entries, so it cannot by itself supply this retained reopen history; add a
+separately bounded retained store or change the contract deliberately.
+
+One implementation candidate uses the child's stdin and stdout for the pipes
+and opens `CONIN$` and `CONOUT$` explicitly for terminal input and display.
+Do not mix protocol frames with logs. Windows documents that redirected
+standard handles may be pipes and that the console devices can be opened
+separately: [console handles](https://learn.microsoft.com/en-us/windows/console/console-handles).
+The current Crossterm 0.29 Windows raw-mode and event paths use the current
+console input handle, but existing app code also checks standard streams for
+terminal status and writes to stderr; those call sites need an explicit UI
+transport rather than an assumption that piped standard streams are a TTY.
+`CREATE_NEW_CONSOLE` is a candidate for the console-subsystem child; verify its
+interaction with redirected handles and actual hosts in an isolated test.
+See [process creation flags](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
+and [pipe handle inheritance](https://learn.microsoft.com/en-us/windows/win32/ipc/pipe-handle-inheritance).
+
+### Ownership and staged qualification
+
+The optional Teamy Rust CLI template should own the reusable child lifecycle,
+bounded transport and test harness; template consumers copy reviewed modules
+with their source revision. Codex owns telemetry-specific records, receiver,
+retention and presentation. Defibrillator owns its input capture, binding and
+recovery policy: loss of UI focus or child disconnect must cancel/disarm any
+in-progress capture and preserve the previous binding. Its background runtime
+and authorized input matching do not depend on the UI child. No privileged
+service or DWM action is implied by this design.
+
+Implement and qualify in stages before adopting in both consumers:
+
+1. Pure state-machine and synthetic pipe tests cover repeated Show, concurrent
+   close/reopen, spawn and handshake failure, stale generations, EOF, child
+   crash, owner shutdown, malformed or oversized frames and no duplicate UI.
+2. Exercise bounded queues, replay after reconnect, partial writes and flush
+   failures, loss counters, sanitization and file-sink independence. A stalled
+   UI must not stall the owner. Verify no ingested OTLP record is exported back
+   to its sender and no unrelated raw global keystrokes enter logs or IPC.
+   Only an explicitly initiated binding capture may send a bounded preview of
+   its candidate binding to the UI; do not persist that preview as a key log.
+3. A Windows process fixture, using invented data and no tray activation,
+   checks restricted handle inheritance, distinct console ownership, redirected
+   standard streams, `CONIN$`/`CONOUT$`, EOF and cleanup. Qualify relevant job
+   and terminal-host behavior. Until this succeeds, the process split is a
+   design, not a guarantee.
+4. After specific opt-in and a suitable graphics state, launch the tray owner,
+   show its child console, close the child with the window Close button, confirm
+   the owner and its source continue, reopen once, inspect bounded replay, and
+   choose tray Exit. Repeat for both applications with synthetic data before
+   any real telemetry capture or privileged recovery testing.
