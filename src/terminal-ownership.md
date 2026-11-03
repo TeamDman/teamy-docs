@@ -110,9 +110,12 @@ Use one child at a time, tracked by the actual child handle and an owner-assigne
 generation. Model `Closed`, `Starting`, `Open`, `Closing` and `Stopped`.
 Repeated Show during `Starting` or `Open` should coalesce; wait for the previous
 child to exit and be reaped before spawning a replacement. Show during
-`Closing` records one pending reopen, which runs only after that exit. Codex's
-current code can miss a Show that races with a window Close before it detects
-the disconnect; retrying Show after closure works. Ignore messages
+`Closing` records one pending reopen, which runs only after that exit. Codex
+keeps a Show request pending until the current child confirms responsiveness;
+disconnect before confirmation preserves that request for one replacement.
+Repeated requests require the latest confirmation, while Hide and Exit cancel
+the request. A bounded deadline covers both a blocked queue and a slow child.
+Ignore messages
 from an old generation. A failed spawn, broken channel or unresponsive close
 is reported and must not silently create a duplicate child. Do not kill an
 unrelated process or infer ownership from a title or PID alone. On owner exit,
