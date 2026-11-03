@@ -70,7 +70,7 @@ When another process needs interactive access, first restore and suspend the cur
 ## Keep the tray owner alive when the console closes
 
 The shared template has a synthetic-tested process foundation at local revision
-`1d6de93`; Codex has a code-only adoption at `3017e63`. Defibrillator has
+`d3e304a`; Codex has a code-only adoption at `880126a`. Defibrillator has
 adopted the earlier foundation and needs its application-specific integration of
 the newer messages and disconnect handling. None establishes actual Windows
 Close-button behavior until the opt-in test below.
@@ -120,8 +120,13 @@ from an old generation. A failed spawn, broken channel or unresponsive close
 is reported and must not silently create a duplicate child. Do not kill an
 unrelated process or infer ownership from a title or PID alone. On owner exit,
 request child shutdown and wait for a bounded interval; the child also exits
-on control-channel EOF. Failure to complete cleanup is reported rather than
-presented as success.
+on control-channel EOF. At the deadline the supervisor requests termination and
+checks exit without an indefinite wait. If termination fails or exit remains
+unconfirmed, it retains the process handle, reports the failure and rejects a
+replacement until the caller polls or retries cleanup. A dropped supervisor can
+only make a bounded final attempt, log a tracing error if possible, and release
+its handles; that does not prove the OS stopped the child. Failure to complete
+cleanup is reported rather than presented as success.
 
 ### IPC and bounded replay
 
@@ -173,7 +178,7 @@ and [pipe handle inheritance](https://learn.microsoft.com/en-us/windows/win32/ip
 
 ### Ownership and staged qualification
 
-The optional Teamy Rust CLI template should own the reusable child lifecycle,
+The optional Teamy Rust CLI template owns the reusable child lifecycle,
 bounded transport and test harness; template consumers copy reviewed modules
 with their source revision. Codex owns telemetry-specific records, receiver,
 retention and presentation. Defibrillator owns its input capture, binding and
