@@ -14,10 +14,10 @@ The local [Teamy CLI template](rust-cli-template.md) has optional, caller-owned 
 
 Track the shared work and its implementation status in the [terminal and Windows foundation roadmap](terminal-foundation-roadmap.md).
 
-Closing a console can terminate processes attached to it. The proposed
+Closing a console can terminate processes attached to it. The implemented, synthetic-tested
 [separate console UI process](#keep-the-tray-owner-alive-when-the-console-closes) keeps the tray owner and
 worker outside that console so closing the UI can leave the application alive;
-this is not yet implemented or live-qualified.
+the actual console Close button and desktop hosts are not yet live-qualified.
 
 ## Transfer ownership after restoration
 
@@ -69,12 +69,11 @@ When another process needs interactive access, first restore and suspend the cur
 
 ## Keep the tray owner alive when the console closes
 
-This is a proposed shared contract and test plan, not an implemented or
-live-qualified capability. In the current local Codex tray mode (`151f30a`),
-the telemetry receiver, tray and allocated console share one process. The
-local Defibrillator tray prototype (`7aaa240`) also owns its terminal in the
-process that owns its runtime. Hiding a window is useful, but neither path
-establishes that closing the console window leaves the application running.
+The shared template has a synthetic-tested process foundation at local revision
+`1d6de93`; Codex has a code-only adoption at `3017e63`. Defibrillator has
+adopted the earlier foundation and needs its application-specific integration of
+the newer messages and disconnect handling. None establishes actual Windows
+Close-button behavior until the opt-in test below.
 Windows sends `CTRL_CLOSE_EVENT` to processes attached to the console; its
 documented handler contract describes cleanup before termination, including
 when a handler returns true. See [HandlerRoutine](https://learn.microsoft.com/en-us/windows/console/handlerroutine).
@@ -86,7 +85,7 @@ allocates and detaches its console and routes console control events toward
 tray shutdown. They are useful prior art for ownership and replay, not evidence
 that closing a same-process console preserves a background worker.
 
-### Proposed boundary
+### Process boundary
 
 Use an unelevated, Windows-subsystem tray **owner** that is not attached to the
 UI console. It owns the application runtime, tray, input or telemetry sources,
@@ -99,8 +98,8 @@ Do not rely on a console-close handler to keep the owner alive.
 The ordinary attached-terminal commands remain ordinary foreground commands.
 In tray mode, `q` closes the UI while the tray owner remains active; the tray's
 explicit Exit action stops the application. Hide requests an orderly UI close;
-Show reopens it. These tray-mode semantics are proposed and differ from the
-current single-process Codex command, where `q` exits telemetry. Never hide a
+Show reopens it. These tray-mode semantics differ from the ordinary foreground
+Codex command, where `q` exits telemetry. Never hide a
 shared parent terminal. The background owner must not remain attached to the
 console whose closure it is meant to survive. Process jobs, terminal-host
 lifetime, Windows sign-out and system shutdown can impose additional limits;
@@ -109,9 +108,11 @@ circumstances.
 
 Use one child at a time, tracked by the actual child handle and an owner-assigned
 generation. Model `Closed`, `Starting`, `Open`, `Closing` and `Stopped`.
-Repeated Show during `Starting` or `Open` coalesces; wait for the previous
+Repeated Show during `Starting` or `Open` should coalesce; wait for the previous
 child to exit and be reaped before spawning a replacement. Show during
-`Closing` records one pending reopen, which runs only after that exit. Ignore messages
+`Closing` records one pending reopen, which runs only after that exit. Codex's
+current code can miss a Show that races with a window Close before it detects
+the disconnect; retrying Show after closure works. Ignore messages
 from an old generation. A failed spawn, broken channel or unresponsive close
 is reported and must not silently create a duplicate child. Do not kill an
 unrelated process or infer ownership from a title or PID alone. On owner exit,
@@ -121,19 +122,24 @@ presented as success.
 
 ### IPC and bounded replay
 
-Start with two inherited anonymous pipes dedicated to the spawned child, not a
-public network listener. Use a versioned, length-delimited typed protocol with
-strict frame and queue limits. Restrict handle inheritance to the intended pipe
-ends; close duplicate ends promptly so EOF is meaningful, and verify the actual
-Windows spawn implementation rather than assuming a generic process launcher
-provides a handle allowlist. The owner launches a known bundled UI executable
+Use two anonymous pipes dedicated to the spawned child, not a public network
+listener. The Windows implementation creates non-inheritable handles and starts
+the child without handle inheritance. The child verifies its actual parent and
+its creation time, then duplicates only the two designated endpoints. This avoids
+leaking temporarily inheritable handles to a concurrent process spawn. The owner
+launches a known bundled UI executable
 without a shell or caller-provided executable path. It accepts only explicit
 application-defined intents, never command strings to execute. An unauthenticated
-named pipe is not a substitute for these inherited channels.
+named pipe is not a substitute for these private channels. Use a versioned,
+length-delimited typed protocol with strict frame and queue limits.
 
-The minimum exchange is `Hello`/`Ready` with protocol version and generation,
-`Snapshot`/`Record` with sequence numbers and loss indicators, `Ack`, and
-typed application intents. Keep control messages separate from terminal text.
+The exchange includes `Hello`/`Ready` with protocol version and generation,
+`Record` with sequence numbers, `Gap` loss indicators, `Ack`, and bounded
+application-intent and transient-event envelopes. Consumers must define and
+validate their own closed set of typed application messages. The owner receives
+clean pipe EOF independently of process exit, cancels any UI-bound capture and
+uses a bounded deadline to stop an unresponsive owned child. Keep control
+messages separate from terminal text.
 The owner is the source of truth: it continues receiving events while no UI is
 open, keeps a bounded ring with explicit eviction and truncation counters, and
 never blocks the receiver or recovery loop on a slow UI. Reopening requests a
@@ -147,8 +153,9 @@ The template's existing `TerminalLogBuffer::acknowledge` removes delivered
 entries, so it cannot by itself supply this retained reopen history; add a
 separately bounded retained store or change the contract deliberately.
 
-One implementation candidate uses the child's stdin and stdout for the pipes
-and opens `CONIN$` and `CONOUT$` explicitly for terminal input and display.
+On Windows Codex's UI child opens `CONIN$` and `CONOUT$` explicitly for terminal
+input and display, while the two private pipes carry protocol frames. The
+template's non-Windows fallback uses standard streams for protocol transport.
 Do not mix protocol frames with logs. Windows documents that redirected
 standard handles may be pipes and that the console devices can be opened
 separately: [console handles](https://learn.microsoft.com/en-us/windows/console/console-handles).
@@ -156,8 +163,8 @@ The current Crossterm 0.29 Windows raw-mode and event paths use the current
 console input handle, but existing app code also checks standard streams for
 terminal status and writes to stderr; those call sites need an explicit UI
 transport rather than an assumption that piped standard streams are a TTY.
-`CREATE_NEW_CONSOLE` is a candidate for the console-subsystem child; verify its
-interaction with redirected handles and actual hosts in an isolated test.
+The Windows UI child uses `CREATE_NEW_CONSOLE`; verify the actual console and
+host behavior in an isolated opt-in test.
 See [process creation flags](https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags)
 and [pipe handle inheritance](https://learn.microsoft.com/en-us/windows/win32/ipc/pipe-handle-inheritance).
 
@@ -172,7 +179,7 @@ in-progress capture and preserve the previous binding. Its background runtime
 and authorized input matching do not depend on the UI child. No privileged
 service or DWM action is implied by this design.
 
-Implement and qualify in stages before adopting in both consumers:
+Qualify and extend in stages as consumers adopt the foundation:
 
 1. Pure state-machine and synthetic pipe tests cover repeated Show, concurrent
    close/reopen, spawn and handshake failure, stale generations, EOF, child
@@ -184,10 +191,9 @@ Implement and qualify in stages before adopting in both consumers:
    Only an explicitly initiated binding capture may send a bounded preview of
    its candidate binding to the UI; do not persist that preview as a key log.
 3. A Windows process fixture, using invented data and no tray activation,
-   checks restricted handle inheritance, distinct console ownership, redirected
-   standard streams, `CONIN$`/`CONOUT$`, EOF and cleanup. Qualify relevant job
-   and terminal-host behavior. Until this succeeds, the process split is a
-   design, not a guarantee.
+   checks that unrelated handles are not inherited, child identity, EOF and
+   cleanup using hidden synthetic processes. Distinct real console ownership,
+   `CONIN$`/`CONOUT$`, job and terminal-host behavior remain to be qualified.
 4. After specific opt-in and a suitable graphics state, launch the tray owner,
    show its child console, close the child with the window Close button, confirm
    the owner and its source continue, reopen once, inspect bounded replay, and
