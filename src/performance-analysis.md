@@ -96,6 +96,12 @@ The path is `tracing → tracing-subscriber → stderr / NDJSON / tracing-tracy 
 
 Grounding: the template's [published subscriber setup](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/src/logging_init.rs), [tracing-tracy](https://docs.rs/tracing-tracy/latest/tracing_tracy/) and [Tracy's upstream tools](https://github.com/wolfpld/tracy). The span-close file update and runtime warning helper described here are local template additions reviewed on 4 October 2026, rather than features of that published snapshot.
 
+## Perfetto for latency and jank investigations
+
+Keep [Perfetto](https://github.com/google/perfetto) as a future evaluation reference for performance monitoring and trace-based latency or jank analysis, including [browser frontend work](ui-frameworks.md#browser-frontend-references). It records, visualizes and SQL-queries traces: the browser UI supports timeline exploration, while Trace Processor exposes trace data for SQL analysis. Evaluate these against a representative slow interaction when a frontend project needs them.
+
+The official README, reviewed on 4 November 2026, distinguishes system-wide recording on Android/Linux from the tracing SDK, UI and Trace Processor, which also run on Windows/macOS. Their availability does not imply general native Windows system capture. Status: reference review only; no capture, benchmark, local integration or dependency adoption has been performed for this entry.
+
 ## Collect timing logs before a full capture
 
 From a template checkout containing the local timing update, build first and then run the executable. This measures command execution separately from Cargo's build work:

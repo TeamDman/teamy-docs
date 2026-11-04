@@ -101,6 +101,17 @@ Separate changing live layout/style data, replacing compiled code, and preservin
 
 For a Minecraft-like edit-and-observe loop, record exactly what can change while a broker connection, selection and queued operations stay alive. Test schema changes and cleanup as well as visual edits; a successful color change does not qualify a whole-code hot-reload workflow.
 
+## Browser frontend references
+
+Revisit these when planning a browser frontend. Official project pages and READMEs reviewed on 4 November 2026 establish their design and stated limits; these are future evaluation references, with no local integration, compatibility testing or dependency adoption.
+
+| Need | Reference and design | Evaluation boundary |
+| --- | --- | --- |
+| Build semantic SVG drag-and-drop interactions | [Declarative Dragging](https://declarative-dragging.github.io/) describes reachable future model states; speculative rendering derives the drag interaction. [Dragology](https://github.com/declarative-dragging/dragology) implements it for SVG on the web. | Review the demos and `examples/consumer` Vite example. Upstream says conventional documentation is not yet prepared; evaluate the interaction model against the intended editor or diagram. |
+| Make frontend state transitions and effects explicit | [Foldkit](https://github.com/foldkit/foldkit) is a TypeScript frontend framework built on Effect and The Elm Architecture, with explicit Model, Message and update definitions and effect handling. | Evaluate the state/effect architecture for the application. Upstream calls it pre-1.0 and warns that minor releases may break APIs. |
+
+For trace-based investigation of frontend latency and jank, see [Perfetto](performance-analysis.md#perfetto-for-latency-and-jank-investigations). These references do not establish that Dragology and Foldkit work together.
+
 ## Qualify the choice with one real screen
 
 Prototype a broker status screen with reconnect/cancel, a bounded event list and editable configuration. Preserve service/domain ownership outside the GUI, use bounded worker messages, and connect [logging](logging.md) and [cancellation](cancellation.md). Check keyboard traversal, Narrator, IME composition, clipboard, DPI changes, sleep/resume and shutdown on Windows. For Android, add TalkBack, soft-keyboard resizing, rotation, background/resume and permission handling. Measure startup, idle usage and sustained updates on the same workloads before comparing performance; source architecture alone supplies no ranking.

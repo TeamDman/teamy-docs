@@ -32,6 +32,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Capture logical spans in an eyre error or diagnose missing span traces | [Span traces and error hooks](logging.md#attach-tracing-spans-to-eyre-errors) | ErrorLayer, color-eyre and Cloud-Terrastodon's subscriber regression. |
 | Preserve typed log fields and error context between processes | [IPC telemetry contracts](logging.md#preserve-field-types-before-crossing-ipc) | Current string-value limitations and a proposed Facet capture/rendering boundary. |
 | Explain slow commands, find CPU hotspots or measure completed GPU work | [Optimize performance](performance-analysis.md) | Instant budgets, tracing/NDJSON, Tracy capture/viewer and teamy-profiler's Cargo harness and CPU decoder. |
+| Investigate frontend latency, jank or performance traces with SQL | [Perfetto](performance-analysis.md#perfetto-for-latency-and-jank-investigations) | Timeline UI and Trace Processor; future evaluation reference with platform-specific recording limits. |
 | Try a faster Rust heap allocator for allocation-heavy work | [Try mimalloc](performance-analysis.md#try-mimalloc-for-allocating-hot-paths) | Microsoft's application guideline and teamy-mft's executable allocator selection. |
 | Warn when a command exceeds its reasonable runtime | [Command runtime expectations](performance-analysis.md#make-slow-commands-warn-during-normal-use) | The local template's small Instant-based guard, phase checkpoints and final check. |
 | Stop work safely | [Cooperative cancellation](cancellation.md) | teamy-cancellation and consuming CLIs. |
@@ -56,6 +57,14 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Compare NetBird, Tailscale, a private mesh or public reverse tunnel | [Networking survey](networking-survey.md) | NetBird, Tunnet and OpenTunnel; descriptive evidence, not endorsement or adoption. |
 | Bootstrap a Windows Azure lab VM, keep Tailscale/NetBird connected without login, or use private RDP | [Azure Windows lab access](networking-survey.md#bootstrap-an-azure-windows-lab-vm-then-choose-the-access-path) | Official VM-extension, Windows service/enrollment and RDP guidance; proposed combination, not deployed here. |
 | Keep VM passwords and mesh enrollment keys out of ordinary Terraform output | [IaC credential boundaries](networking-survey.md#keep-windows-passwords-and-enrollment-keys-out-of-ordinary-iac-output) | Protected settings versus plan/state persistence; provider support must be checked. |
+
+## Browser frontends
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Build SVG drag-and-drop interactions from reachable model states | [Browser frontend references](ui-frameworks.md#browser-frontend-references) | Declarative Dragging and Dragology; design reviewed, demos available for evaluation; not adopted or integration-tested. |
+| Choose a TypeScript frontend with explicit state, messages and effects | [Browser frontend references](ui-frameworks.md#browser-frontend-references) | Foldkit, Effect and The Elm Architecture; pre-1.0 evaluation reference. |
+| Diagnose a slow frontend interaction or frame jank | [Perfetto](performance-analysis.md#perfetto-for-latency-and-jank-investigations) | Trace visualization and SQL analysis; future evaluation reference, not local capture qualification. |
 
 ## Desktop applications
 
