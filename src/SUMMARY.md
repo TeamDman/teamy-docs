@@ -65,6 +65,8 @@
   - [Evaluate agent harnesses and memory](agent-harnesses.md)
     - [Locate work across execution environments](execution-environments.md)
   - [Keep a migration aligned and fast](migration-workflows.md)
+  - [Explore Rust interactively](interactive-rust.md)
+  - [Render text with Liquid templates](liquid-templates.md)
   - [Find possible actions from typed capabilities](decision-planning.md)
     - [Delegate only the authority an action needs](delegated-authority.md)
     - [Coordinate through shared state and messages](shared-coordination.md)

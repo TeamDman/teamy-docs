@@ -204,4 +204,4 @@ This build recognised a 768 × 512 PNG with a red square on the left and a blue 
 
 The highest sampled whole-device usage was 21,686 MiB. The timing and sampling boundaries above still apply, including uncontrolled disk-cache state. Shapes beyond this tested 768 × 512 fixture remain unqualified. This one spatial-description check does not establish independent embedding parity or broad vision accuracy.
 
-Implementation locations in the unpublished service checkout are `crates/teamy_llm_prompt`, the prompt CLI, the service's image acquisition boundary, and the Makepad GGUF adapter. This follows Liquid prior art in SFM's source projections and Cloud-Terrastodon's `pick`; the prompt-specific typed image tag remains a local addition.
+Implementation locations in the unpublished service checkout are `crates/teamy_llm_prompt`, the prompt CLI, the service's image acquisition boundary, and the Makepad GGUF adapter. This follows [Liquid prior art](liquid-templates.md) in SFM's source projections and Cloud-Terrastodon's `pick`; the prompt-specific typed image tag remains a local addition.

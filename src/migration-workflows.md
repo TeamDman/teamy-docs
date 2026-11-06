@@ -8,6 +8,8 @@ Our SFM source migration exposed two failures. A goal alone did not prevent drif
 
 SFM's migration reconstructs shared Liquid source from existing Java implementations across several version and feature contexts. The oracle compares generated source with pinned references and identifies remaining work.
 
+For the exact Rust Liquid dependency and SFM's directive boundary, see [Liquid templates](liquid-templates.md).
+
 | Failure | Evidence and consequence | Remediation |
 | --- | --- | --- |
 | The agent drifted from the original conversion goal | The operator reported drift during sustained migration work. Deciding what to do next and maintaining progress reports became recurring agent work. | Put remaining-work discovery, priority and next-item selection in deterministic tooling. Keep the goal's scope and correctness checks fixed. |

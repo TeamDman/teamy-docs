@@ -25,6 +25,8 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Improve tooling while still completing the work it selects | [Optimize while advancing useful work](performance-analysis.md#optimize-while-advancing-useful-work) | Timed selection across real accepted changes, isolated candidates and a fixed optimization cutoff. |
 | Apply TeamyStyle, structure domain types or review a software design | [TeamyStyle](teamystyle.md) | Established engineering rules, recommendations, concrete examples and review checklist. |
 | Start a new Rust CLI | [Understand the template](rust-cli-template.md) | teamy-rust-cli. |
+| Try Rust expressions in a REPL or notebook, or embed Rhai scripting in Rust | [Explore Rust interactively](interactive-rust.md) | Evcxr and Rhai references; embedding remains unadopted. |
+| Render Liquid templates or generate SFM source variants | [Liquid templates](liquid-templates.md) | liquid-rust and SFM's bounded source-projection profile. |
 | Enforce Rust rules, reject print macros or make output testable | [Rust code standards](code-standards.md) | Local template lint policy, supplied writers and compile fixtures; CLI-package adoption in teamy-llm-service. |
 | Parse arguments and expose clear help | [Command-line argument parsing](cli-parsing.md) | Facet, Figue, the template and Cloud-Terrastodon. |
 | Design a Bend CLI parser or find argument-parsing prior art | [Bend CLI references](bend-references.md#design-a-bend-cli-parser) | viridale/bend-cli; reference only, with an owned clap/Figue-style interface preferred. |
