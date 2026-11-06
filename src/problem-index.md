@@ -27,6 +27,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Start a new Rust CLI | [Understand the template](rust-cli-template.md) | teamy-rust-cli. |
 | Enforce Rust rules, reject print macros or make output testable | [Rust code standards](code-standards.md) | Local template lint policy, supplied writers and compile fixtures; CLI-package adoption in teamy-llm-service. |
 | Parse arguments and expose clear help | [Command-line argument parsing](cli-parsing.md) | Facet, Figue, the template and Cloud-Terrastodon. |
+| Design a Bend CLI parser or find argument-parsing prior art | [Bend CLI references](bend-references.md#design-a-bend-cli-parser) | viridale/bend-cli; reference only, with an owned clap/Figue-style interface preferred. |
 | Add logs, file output or cross-process diagnostics | [Logging with tracing](logging.md) | The template, Piing and teamy-mft. |
 | Convert styled logs into Ratatui without clobbering the screen | [TUI log representations](logging.md#choose-a-representation-before-styling-a-tui-log) | Cloud-Terrastodon's structured toasts and the LLM's bounded SGR-to-span conversion. |
 | Capture logical spans in an eyre error or diagnose missing span traces | [Span traces and error hooks](logging.md#attach-tracing-spans-to-eyre-errors) | ErrorLayer, color-eyre and Cloud-Terrastodon's subscriber regression. |
@@ -70,6 +71,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
+| Investigate Bend on Windows, CUDA support or desktop GPU work | [Bend GPU and Windows references](bend-references.md#investigate-cuda-and-windows-support) | MattCozendey/bend feature branches; compatibility and quality unqualified. |
 | Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, GPUI Fast, Makepad, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
 | Build an egui/eframe desktop app, tiled UI or log viewer | [egui and eframe in Teamy projects](egui-eframe.md) | Existing CM and Hyper Backup Explorer implementations and log collector limitations. |
 | Resume Cursor Hero v2 Bevy modeling, human anatomy, articulation or motion work | [Review modeling references early](ui-frameworks.md#cursor-hero-v2-modeling-references) | MS-Human-700 README reviewed; related X post unverified. Revisit both early when work resumes; no adoption. |
@@ -146,6 +148,16 @@ Use book search with the operation you want: `EXE icon`, `message box`, `tray ic
 
 [Find an authored Stack Overflow answer](stackoverflow-prior-art.md) connects earlier answers to their purposes, including EXE icon extraction, terminal colours, UI Automation, Rust and formal languages. Inspect current source before adopting historical examples.
 
-For a constrained grammar, parser, semantic checker or verified state machine, read [formal methods and language implementation](formal-methods.md). It connects Prolog, NuSMV, Alloy and the paused Bend rewrite to their distinct purposes.
+For a constrained grammar, parser, semantic checker or verified state machine, read [formal methods and language implementation](formal-methods.md). It connects Prolog, NuSMV, Alloy and the experimental Bend rewrite to their distinct purposes.
+
+## Reason about actions and environments
+
+| What you want to do | Read this | Evidence and status |
+| --- | --- | --- |
+| Solve Sudoku, express relationships or evaluate Scryer Prolog | [Explore relationships with Prolog](logic-programming.md) | Scryer example; solver and Minecraft integration are experiments. |
+| Find operations that can produce a type, plan an inventory or explain a route | [Typed capability planning](decision-planning.md) | Cloud Terrastodon's offline graph and Excalidraw export; a Prolog comparison is proposed. |
+| Limit a worker's permissions, compare object capabilities or understand Azure RBAC scope | [Delegated authority](delegated-authority.md) | Cap'n Proto and E are prior art; validate service-specific enforcement. |
+| Coordinate agents through shared state, explore Spacetime or Veilid, or synchronize media with Syncplay and mpv | [Shared coordination](shared-coordination.md) | Stigmergy and transport candidates; no integration claimed. |
+| Move a file between desktop and cloud, or distinguish a task from its environment | [Execution environments](execution-environments.md) | Public OpenAI documentation and instance-specific transfer constraints. |
 
 For hand-drawn browser animation, timestamp-addressable scene capture and resumable frame rendering, see the [PDoomVideo-inspired pipeline](making-videos.md#pdoomvideo-strategy). Remotion and Psychopomp qualification is recorded in [additional storytelling candidates](making-videos.md#additional-storytelling-candidates).

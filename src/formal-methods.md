@@ -30,14 +30,16 @@ Record the checked scope. Finding no counterexample within it is not an unbounde
 
 Retain named properties, environment assumptions and witness traces. Test stuttering and deadlock explicitly. Agreement within the declared projection does not establish renderer, networking or whole-game equivalence.
 
-## Learn from the paused Rust Bend rewrite
+<a id="learn-from-the-paused-rust-bend-rewrite"></a>
 
-The upstream [Bend 2 proof language](https://github.com/bendlang/bend) is a separate project from our port. `teamy-bend` is an experimental Rust rewrite, started from our CLI template. It is on hold and not ready for general use or as a complete replacement. Keep it as prior art; do not infer that an incomplete port is a supported application dependency.
+## Learn from the experimental Rust Bend rewrite
+
+The upstream [Bend 2 proof language](https://github.com/bendlang/bend) is a separate project from `teamy-bend`, an experimental Rust rewrite started from our CLI template. It is not ready for general use or as a complete replacement. Keep it as prior art; do not infer that an incomplete port is a supported application dependency.
 
 At public revision [`ea34479`](https://github.com/TeamDman/teamy-bend/blob/ea34479b143643454991e28e621d0408ec92477c/README.md), the repository records a proof-checking subset, native evaluation, persistent typed calls and selected JavaScript/C generation. Its [implementation plan](https://github.com/TeamDman/teamy-bend/blob/ea34479b143643454991e28e621d0408ec92477c/docs/implementation-plan.md) tracks broader language, library, runtime and GPU work.
 
 Full compatibility and CPU/GPU parity remain unfinished. The implemented checking kernel has not itself been formally proved sound. Passing fixtures establish behavior for that subset; they do not measure a percentage of the complete port.
 
-The current local README explicitly marks development paused and the port not ready. The linked public revision predates that notice. Documentation of the experiment does not resume its implementation.
+The public [CPU resumption record at `e2599d3`](https://github.com/TeamDman/teamy-bend/blob/e2599d3ef7f8e2f472d16f97ac18c4bc42b94f7c/docs/cpu-cloud-resumption.md) records a first Linux CPU milestone. A separate [26 October checkpoint](https://github.com/TeamDman/teamy-bend/blob/ea4cc7d2fd9e4e2f028cf3602499da3a93a214da/docs/cpu-pause-20261026.md) records a later pause. Renewed cloud CPU work is requested; do not infer new results from that request. GPU validation and broad compatibility remain separate. The checked-in local README can lag these public records. For CLI parser design and desktop CUDA/Windows references, see [Bend references](bend-references.md).
 
 For model-generated plans, use these tools where their conclusions fit the task. An LLM can suggest a representation; deterministic checks still establish grammar, references and permitted state transitions. [Finite-choice models](finite-choice-models.md) supply scores, not proofs.
