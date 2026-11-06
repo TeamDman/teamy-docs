@@ -31,4 +31,4 @@ This is an illustrative fragment for a Rust function that propagates Rhai errors
 
 Rhai's [operation limit](https://rhai.rs/book/safety/max-operations.html) is unlimited by default. A finite limit can stop scripts that exceed it, but an operation is not a wall-clock deadline: one registered Rust function may do substantial work. The `unchecked` feature disables safety checks including that limit. Audit exposed functions, module loading, data size, cancellation and side effects independently, and test denied actions and runaway scripts under the selected configuration. A restricted scripting API does not itself authorize an action; see [delegated authority](delegated-authority.md).
 
-For rendering text from controlled data rather than evaluating interactive Rust or embedding an action language, see [Liquid templates](liquid-templates.md).
+For rendering text from controlled data rather than evaluating interactive Rust or embedding an action language, see [Liquid templates](liquid-templates.md). The similarly named [anomalyco Rune](ui-frameworks.md#rune) is a UI framework, not Evcxr or Rhai.
