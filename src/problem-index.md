@@ -13,6 +13,14 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | --- | --- | --- |
 | Remove AI writing smells, de-slop prose, humanize text or review release notes | [Write and review precise prose](writing-and-review.md) | Imported de-slop and Humanizer source snapshots; fact-preserving review, provenance and profile junction arrangement. |
 
+## Prompts and skills
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Find hidden state machines, lifecycle bugs or invalid transitions | [State-machine prompt](prompts-and-skills.md#find-hidden-state-machines) | Trevin Chow's concise prompt, expanded from Steve Ruiz, with source links. |
+| Describe all app behavior and control through CLI commands | [CLI companion framing](prompts-and-skills.md#describe-system-behavior-through-cli-commands) | Teamy's framing; distinguish existing commands from proposed controls. |
+| Find reusable workspace skills or decide where a prompt belongs | [Prompts and skills](prompts-and-skills.md) | Docs retain the broader context; TeamDman/skills holds packaged instructions. |
+
 ## Command-line tools
 
 | What you want to do | Read this | Implementation references |

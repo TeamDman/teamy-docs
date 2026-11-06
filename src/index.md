@@ -19,6 +19,10 @@ This book contains unclassified guidance and synthetic examples approved for a p
 
 Start with the [CLI definition](glossary.md#cli) when the command-line vocabulary is unfamiliar.
 
+## Prompts and skills
+
+[Prompts and skills](prompts-and-skills.md) keeps useful snippets and their sources, including finding hidden state machines and describing system behavior through CLI commands. It also links to the reusable workspace skills repository.
+
 ## Further guidance
 
 [TeamDman/Guides](https://github.com/TeamDman/Guides) contains existing tutorials and explanations. Follow a topic's source guidance and verify its applicability to the version and platform in use.
