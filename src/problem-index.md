@@ -74,7 +74,8 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
 | Investigate Bend on Windows, CUDA support or desktop GPU work | [Bend GPU and Windows references](bend-references.md#investigate-cuda-and-windows-support) | MattCozendey/bend feature branches; compatibility and quality unqualified. |
-| Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, GPUI Fast, Makepad, Rune, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
+| Choose a Rust GUI, compare UI frameworks or evaluate Android companion support | [Choose a desktop UI framework](ui-frameworks.md) | GPUI Kit, GPUI Fast, BUI, Makepad, Rune, Bevy, egui/eframe, Iced and raw DirectX; dated evaluation evidence and gaps. |
+| Build Blender-style desktop controls or evaluate BUI, tkinter compatibility and GPUI adapters | [BUI](ui-frameworks.md#bui) | Source-reviewed candidate; pre-1.0, GPL and accessibility/text limitations, no local qualification or adoption. |
 | Inspect or test a Rust UI headlessly with anomalyco Rune | [Rune UI framework](ui-frameworks.md#rune) | Upstream headless inspection and scripted-input reference; no local execution or adoption. |
 | Build an egui/eframe desktop app, tiled UI or log viewer | [egui and eframe in Teamy projects](egui-eframe.md) | Existing CM and Hyper Backup Explorer implementations and log collector limitations. |
 | Resume Cursor Hero v2 Bevy modeling, human anatomy, articulation or motion work | [Review modeling references early](ui-frameworks.md#cursor-hero-v2-modeling-references) | MS-Human-700 README reviewed; related X post unverified. Revisit both early when work resumes; no adoption. |
