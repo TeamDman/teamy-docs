@@ -1,5 +1,7 @@
 # Start with the Rust CLI template
 
+For the current dependency adoption snapshot, see [the Facet fork ecosystem](facet-ecosystem.md). The implementation references below retain their stated revisions.
+
 New Teamy CLI projects are expected to use Rust and [teamy-rust-cli](https://github.com/TeamDman/teamy-rust-cli). Start from the template and understand its existing capabilities before replacing them or adding another framework. A departure should name the requirement the template cannot meet and record the decision.
 
 This chapter describes the implementation at public revision [`7e62d72`](https://github.com/TeamDman/teamy-rust-cli/tree/7e62d72bbbf3ea1b302e48008da565e92d4b6c93), checked on 1 October 2026. Local additions are labelled separately. The reasons below explain our preferred use of the code; they are design judgments grounded in the implementation.

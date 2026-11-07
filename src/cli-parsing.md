@@ -1,5 +1,7 @@
 # Parse command-line arguments
 
+For the current dependency adoption snapshot, see [the Facet fork ecosystem](facet-ecosystem.md). The implementation references below retain their stated revisions.
+
 Start a new Teamy CLI from [teamy-rust-cli](rust-cli-template.md). Add its command to the typed schema and dispatch path before considering another parser. Read the dependency revision the project actually pins; current upstream documentation can describe different behavior.
 
 Facet describes Rust types and their fields. Figue uses those descriptions to construct a CLI schema, parse arguments, generate help and produce typed values. In the template, `Cli` flattens `GlobalArgs` and `FigueBuiltins`, then selects an explicit `Command` enum. Named, positional and subcommand annotations express the surface. Doc comments supply explanations.

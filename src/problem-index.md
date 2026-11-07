@@ -37,6 +37,7 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | Render Liquid templates or generate SFM source variants | [Liquid templates](liquid-templates.md) | liquid-rust and SFM's bounded source-projection profile. |
 | Enforce Rust rules, reject print macros or make output testable | [Rust code standards](code-standards.md) | Local template lint policy, supplied writers and compile fixtures; CLI-package adoption in teamy-llm-service. |
 | Parse arguments and expose clear help | [Command-line argument parsing](cli-parsing.md) | Facet, Figue, the template and Cloud-Terrastodon. |
+| Check Facet/Figue fork versions, dependency migration status or the Vox-to-MFT blocker | [Facet ecosystem](facet-ecosystem.md) | Published versions, consumer pins and qualification gaps. |
 | Design a Bend CLI parser or find argument-parsing prior art | [Bend CLI references](bend-references.md#design-a-bend-cli-parser) | viridale/bend-cli; reference only, with an owned clap/Figue-style interface preferred. |
 | Add logs, file output or cross-process diagnostics | [Logging with tracing](logging.md) | The template, Piing and teamy-mft. |
 | Convert styled logs into Ratatui without clobbering the screen | [TUI log representations](logging.md#choose-a-representation-before-styling-a-tui-log) | Cloud-Terrastodon's structured toasts and the LLM's bounded SGR-to-span conversion. |
