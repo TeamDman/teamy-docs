@@ -12,6 +12,12 @@ Use this page to plan a compatible dependency update, not to replace the behavio
 - **Transport and templates:** Vox has its own reflection/schema dependencies. The Rust CLI template combines Figue, formats, cancellation and tracing. Updating the template does not update existing applications.
 - **Applications:** MFT combines the parser/cancellation path with Vox transport. Cloud Terrastodon and other CLIs have their own pins and validation obligations. This is a dependency graph, not a single linear release train.
 
+## Branch direction
+
+Use `teamy-main` for current Facet ecosystem fork work. The inspected Facet and Figue release revisions listed below are on their respective `teamy-main` branches.
+
+**Long-term plan:** move the maintained fork work from `teamy-main` to `main`. This is the maintainer's intended direction, not a completed branch migration or a claim that the fork changes have been accepted upstream. Until that transition is explicitly carried out and verified, keep using `teamy-main`; do not assume an existing `main` branch contains the same work. Coordinate release automation, branch references and consumer documentation when making the transition.
+
 ## Published fork versions
 
 These registry versions were observed on the snapshot date. Package versions are deliberately independent: **do not replace every `rc.7` with `rc.8`.**
