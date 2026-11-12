@@ -86,6 +86,8 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 
 ## Desktop applications
 
+Want a faster screenshot hotkey or a Rust ShareX replacement? See [Plan a fast Rust screenshot workflow](sharex-replacement.md) for measurement, capture backends and reuse of Cursor Hero, WINC and Teamy Windows.
+
 | What you want to do | Read this | Implementation references |
 | --- | --- | --- |
 | Investigate Bend on Windows, CUDA support or desktop GPU work | [Bend GPU and Windows references](bend-references.md#investigate-cuda-and-windows-support) | MattCozendey/bend feature branches; compatibility and quality unqualified. |

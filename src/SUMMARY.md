@@ -36,6 +36,7 @@
     - [Native message boxes](native-message-boxes.md)
     - [Window creation](window-creation.md)
     - [Screen capture and window observations](screen-capture.md)
+      - [Plan a fast Rust screenshot workflow](sharex-replacement.md)
     - [Terminal integration](terminal-integration.md)
   - [Machine learning and audio](machine-learning.md)
     - [Generate offline sound effects](sound-effects.md)

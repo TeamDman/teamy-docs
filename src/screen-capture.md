@@ -4,6 +4,8 @@ Choose whether you need pixels or application state. A screenshot records visibl
 
 These are Windows-specific references. The inspected Rust CLI template does not supply screen capture or UI Automation. Start with [the template](rust-cli-template.md), then add the required acquisition capability explicitly.
 
+For a product-level plan combining ShareX, Cursor Hero, WINC and Teamy Windows, see [the Rust screenshot workflow roadmap](sharex-replacement.md).
+
 ## Choose the matching prior art
 
 | Need | Start with | Public implementation |
