@@ -13,6 +13,12 @@ New Teamy CLI projects use Rust and [teamy-rust-cli](rust-cli-template.md). Exte
 | --- | --- | --- |
 | Remove AI writing smells, de-slop prose, humanize text or review release notes | [Write and review precise prose](writing-and-review.md) | Imported de-slop and Humanizer source snapshots; fact-preserving review, provenance and profile junction arrangement. |
 
+## Discord and assistant access
+
+| What you want to do | Read this | References and status |
+| --- | --- | --- |
+| Read a Discord thread, inspect mentions or draft a reply using teamy-discord and teamy-broker | [Read Discord through the broker](discord-workflows.md) | Preferred assistant workflow, credential lease boundary, bounded reads and draft/send distinction. |
+
 ## Prompts and skills
 
 | What you want to do | Read this | References and status |

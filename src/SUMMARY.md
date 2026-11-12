@@ -10,6 +10,7 @@
 # Guides and references
 
 - [Find a solution](problem-index.md)
+- [Read Discord through the broker](discord-workflows.md)
 - [Prompts and skills](prompts-and-skills.md)
 - [Write and review precise prose](writing-and-review.md)
 - [Writing programs](writing-programs.md)
