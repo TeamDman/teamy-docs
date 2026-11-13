@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1040" viewBox="0 0 1100 1040" role="img" aria-labelledby="title desc"><title id="title">Current project dependencies and review gates</title><desc id="desc">Conceptual dependencies, proposed review tooling and capture candidates. Details and evidence are in the accompanying current project plan.</desc><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#243047"/></marker></defs><rect width="1100" height="1040" fill="white"/><text x="30" y="48" font-size="28" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Current project plan</tspan></text>
+<text x="30" y="76" font-size="16" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">13 November 2026 · conceptual map, not a resolved Cargo graph</tspan></text>
+<text x="30" y="103" font-size="16" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Solid: existing dependency/workflow   Dashed: proposed use or prior art</tspan></text>
+<text x="30" y="157" font-size="22" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Shared foundations</tspan></text>
+<rect x="30" y="180" width="245" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="42" y="207" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="42" dy="0">Facet + formats</tspan></text>
+<rect x="360" y="180" width="300" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="372" y="207" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="372" dy="0">Figue / tracing /</tspan><tspan x="372" dy="21.25">cancellation*</tspan></text>
+<rect x="760" y="180" width="245" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="772" y="207" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="772" dy="0">Teamy Rust CLI</tspan></text>
+<path d="M275,210 L360,210" fill="none" stroke="#243047" stroke-width="2"  marker-end="url(#arrow)"/>
+<path d="M660,210 L760,210" fill="none" stroke="#243047" stroke-width="2"  marker-end="url(#arrow)"/>
+<rect x="360" y="280" width="300" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="372" y="307" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="372" dy="0">Vox</tspan></text>
+<rect x="760" y="280" width="245" height="60" fill="#fff1ce" stroke="#243047" stroke-width="2"/>
+<text x="772" y="307" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="772" dy="0">Teamy MFT</tspan><tspan x="772" dy="21.25">Human review</tspan></text>
+<path d="M150,240 L360,310" fill="none" stroke="#243047" stroke-width="2"  marker-end="url(#arrow)"/>
+<path d="M660,310 L760,310" fill="none" stroke="#243047" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="30" y="407" font-size="22" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Review gates and existing workflows</tspan></text>
+<rect x="30" y="435" width="280" height="65" fill="#fff1ce" stroke="#243047" stroke-width="2"/>
+<text x="42" y="462" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="42" dy="0">SFM cache reuse</tspan><tspan x="42" dy="21.25">Human review</tspan></text>
+<rect x="360" y="435" width="300" height="65" fill="#fff1ce" stroke="#243047" stroke-width="2"/>
+<text x="372" y="462" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="372" dy="0">Teamy Broker + mobile</tspan><tspan x="372" dy="21.25">Human review</tspan></text>
+<rect x="760" y="435" width="245" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="772" y="462" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="772" dy="0">Teamy Discord</tspan></text>
+<path d="M660,465 L760,465" fill="none" stroke="#243047" stroke-width="2"  marker-end="url(#arrow)"/>
+<text x="30" y="542" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Each reviewed workstream: inspect diff → scoped draft PR → human review → merge</tspan></text>
+<text x="30" y="602" font-size="22" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Proposed review tooling</tspan></text>
+<rect x="30" y="630" width="280" height="65" fill="#fff1ce" stroke="#243047" stroke-width="2"/>
+<text x="42" y="657" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="42" dy="0">teamy-llm-service / decide</tspan><tspan x="42" dy="21.25">Human review</tspan></text>
+<rect x="430" y="630" width="280" height="65" fill="#eef7e8" stroke="#243047" stroke-width="2"/>
+<text x="442" y="657" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="442" dy="0">teamy-review</tspan><tspan x="442" dy="21.25">Proposed, not created</tspan></text>
+<path d="M310,660 L430,660" fill="none" stroke="#243047" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="30" y="730" width="280" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="42" y="757" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="42" dy="0">Teamy Rust CLI</tspan><tspan x="42" dy="21.25">Project foundation</tspan></text>
+<path d="M310,760 L430,680" fill="none" stroke="#243047" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="760" y="630" width="300" height="65" fill="#eef7e8" stroke="#243047" stroke-width="2"/>
+<text x="772" y="657" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="772" dy="0">Makepad Relax + Linkme</tspan><tspan x="772" dy="21.25">Optional compatibility work</tspan></text>
+<path d="M760,660 L710,660" fill="none" stroke="#243047" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<rect x="430" y="730" width="345" height="60" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="442" y="757" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="442" dy="0">Cloud Terrastodon / TPBAC</tspan><tspan x="442" dy="21.25">Capability Lab / Teamy Agent</tspan></text>
+<path d="M570,730 L570,695" fill="none" stroke="#243047" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<text x="30" y="862" font-size="22" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Proposed capture tooling</tspan></text>
+<rect x="30" y="890" width="330" height="65" fill="#e9f2ff" stroke="#243047" stroke-width="2"/>
+<text x="42" y="917" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="42" dy="0">Winc / Teamy Windows</tspan><tspan x="42" dy="21.25">Existing DirectX experiments</tspan></text>
+<rect x="520" y="890" width="330" height="65" fill="#eef7e8" stroke="#243047" stroke-width="2"/>
+<text x="532" y="917" font-size="17" font-family="Arial,sans-serif" fill="#243047"><tspan x="532" dy="0">Teamy Studio capture</tspan><tspan x="532" dy="21.25">Planning / reuse candidates</tspan></text>
+<path d="M360,920 L520,920" fill="none" stroke="#243047" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrow)"/>
+<text x="30" y="1006" font-size="16" font-family="Arial,sans-serif" fill="#243047"><tspan x="30" dy="0">Yellow: in-flight human review   Green: proposal or unresolved experiment</tspan></text></svg>

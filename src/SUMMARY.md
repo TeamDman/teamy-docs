@@ -7,6 +7,10 @@
 - [TeamyStyle](teamystyle.md)
   - [Template decisions and enforcement](teamystyle-template-audit.md)
 
+# Planning
+
+- [Current project plan](current-project-plan.md)
+
 # Guides and references
 
 - [Find a solution](problem-index.md)
