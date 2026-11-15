@@ -20,6 +20,7 @@
 - [Writing programs](writing-programs.md)
   - [Start a Rust project](rust-cli-template.md)
   - [Track the Facet fork ecosystem](facet-ecosystem.md)
+    - [Version JSON documents with Facet](facet-json-versioning.md)
   - [Enforce Rust code standards](code-standards.md)
   - [Command-line tools](good-cli.md)
     - [Argument parsing](cli-parsing.md)
