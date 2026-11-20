@@ -1,0 +1,6 @@
+[book]
+title = "Synthetic Docs"
+authors = ["Example"]
+src = "chapters"
+[build]
+create-missing = false

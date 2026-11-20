@@ -1,0 +1,42 @@
+[package]
+name = "teamy-docs"
+version = "0.1.0"
+edition = "2024"
+authors = ["TeamDman"]
+description = "Typed section discovery for the Teamy Docs mdBook"
+license = "MPL-2.0"
+repository = "https://github.com/TeamDman/teamy-docs"
+
+[lib]
+path = "rust-src/lib.rs"
+
+[[bin]]
+name = "teamy-docs"
+path = "rust-src/main.rs"
+
+[dependencies]
+color-eyre = "0.6.5"
+eyre = "0.6.12"
+directories-next = "2"
+facet = { git = "https://github.com/TeamDman/facet.git", rev = "23ad4dcd0", package = "facet" }
+facet-json = { git = "https://github.com/TeamDman/facet.git", rev = "23ad4dcd0", package = "facet-json" }
+facet-pretty = { git = "https://github.com/TeamDman/facet.git", rev = "23ad4dcd0", package = "facet-pretty" }
+facet-toml = { git = "https://github.com/TeamDman/facet.git", rev = "23ad4dcd0", package = "facet-toml" }
+figue = { git = "https://github.com/TeamDman/facet.git", rev = "23ad4dcd0", package = "figue" }
+pulldown-cmark = { version = "=0.9.6", default-features = false }
+teamy-cancellation = { git = "https://github.com/TeamDman/teamy-cancellation.git", rev = "7c77848", features = ["figue"] }
+tokio = { version = "1.49.0", features = ["rt"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", default-features = false, features = ["ansi", "env-filter", "fmt", "json", "registry"] }
+
+[lints.rust]
+missing_debug_implementations = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+
+[lints.clippy]
+correctness = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+allow_attributes = "deny"
+module_inception = "allow"
+multiple_crate_versions = "allow"
+disallowed_script_idents = "allow"

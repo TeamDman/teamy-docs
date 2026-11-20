@@ -43,3 +43,17 @@ The current site uses `https://teamdman.github.io/teamy-docs/`. Connecting `docs
 ## License and tool provenance
 
 Original repository material is licensed under MPL-2.0; see `LICENSE`. The locally downloaded mdBook executable is a separate third-party tool, licensed under MPL-2.0 by its maintainers. Its official release URL and archive digest are recorded in `tool-lock.json`; the executable/archive and local receipts are ignored.
+
+## List documentation sections
+
+The Rust library and `teamy-docs` CLI enumerate the book's SUMMARY-linked pages and direct heading sections as typed JSON. Rust sources live under `rust-src/` to preserve mdBook's `src/` directory.
+
+```powershell
+cargo run --bin teamy-docs -- sections list --book-root . --output-format json
+cargo test --offline
+cargo clippy --offline --all-targets -- -D warnings
+```
+
+See [the CLI guide](CLI.md) for bounded inputs, source anchors, cancellation, synthetic fixtures, and the contract-only mapper for a later resident `teamy-llm decide --daemon` relevance pipeline. The mapper never runs inference or downloads a model. Installing the executable and running the relevance pipeline are separate explicit actions.
+
+Install or update with `pwsh -NoProfile -File ./update.ps1 -Offline` (or `./install.ps1 -Offline`). Both use `cargo install --path <this repository> --locked`, resolve the repository independently of your working directory, and preserve the lockfile. After installation, a locked local Rust invocation saves this repository as the per-user default book, so the command works from another directory. Use `teamy-docs book-root set --path <book-directory>` to change it; `--book-root` and `TEAMY_DOCS_BOOK_ROOT` override the saved default. `teamy-docs section list` is a supported alias for `teamy-docs sections list`.

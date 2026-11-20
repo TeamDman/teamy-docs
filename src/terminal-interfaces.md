@@ -44,6 +44,20 @@ For example, the published picker accepts line candidates:
 
 After accepting `onnx`, stdout contains that selected line. The picker controls the screen through stderr while it is open. This is a human selection interface; it is not Julia model inference. A piped stdin and an interactive keyboard are different input requirements: qualify the intended host and platform before promising that combination universally.
 
+## Show drive work in an inline grid
+
+**Status, 7 November 2026:** the sources below were inspected. An inline MFT sync visualization is proposed; it has not been implemented or qualified in a terminal host.
+
+The historical [storage-usage MFT view](https://github.com/TeamDman/storage-usage/blob/42489050a20eecf9ef47ec3741dfcec0d469ae73/storage-usage-v2/src/mft_summarize.rs#L883) groups record-validity results into coloured cells. That revision fills whole terminal cells with a background colour. The [original screenshot discussion](https://github.com/omerbenamram/mft/pull/129#issuecomment-3040830323) eventually attributes the apparent corruption to a dump that ignored MFT fragmentation. Reuse its spatial presentation with a legend that states what the colours measure.
+
+For approximately square pixels, Ratatui's [half-block marker](https://docs.rs/ratatui/0.30.2/ratatui/symbols/enum.Marker.html#variant.HalfBlock) uses `▀`, `▄` and `█`. Foreground and background colours control the two vertical halves of a cell. A renderer can therefore show two rows of drive regions per terminal row. Keep volume position, logical MFT position and index-build progress distinct: only some volume regions belong to the MFT, and metadata lookup does not scan the whole disk.
+
+Let the operation emit typed facts that a UI reduces into display state. A proposed sync feed would identify the run and drive, announce the planned physical extents and logical size, report ranges copied successfully, and distinguish snapshot publication from subsequent index phases. Emit copy progress after the writer accepts the bytes; reserve publication success for the completed publication operation. Completion, cancellation and failure must remain distinguishable even when the last progress update is delayed. The same feed should serve local execution and daemon IPC without parsing human log messages.
+
+Bound queued updates and retained state separately. Coalesce frequent progress into the latest state per drive or bounded region buckets, handle out-of-order read completions, and preserve final outcomes. A slow renderer must not hold up disk reads or index work. The UI requests cancellation, while the work owner drains its workers and reports the resulting state; closing the view alone does not prove the work stopped.
+
+Use [one terminal owner](terminal-ownership.md#put-logs-above-an-inline-view) to serialize grid redraws with diagnostic output above an inline stderr viewport. Preserve stdout for command results and use ordinary diagnostics when the required terminal streams are redirected. Test the state reduction and half-cell colours with synthetic ranges and Ratatui's test backend, including tiny views, resize and overlapping completions. Qualify Unicode, log wrapping, cancellation and terminal restoration in the intended host separately.
+
 ## Keep the loaded runtime between turns
 
 teamy-tts [loads its runtime before its input loop](https://github.com/TeamDman/teamy-tts/blob/595ecca2c6429dc69d2552a851c467a9a19dcce3/src/cli/interactive.rs). A dedicated thread reads stdin into a Tokio channel. Terminal prompts go to stderr; synthesis and playback are sequential, and `--output-dir` opts into persistent WAV files. Cancellation can end the async wait for input. Its stdin channel is unbounded, so this reference needs an explicit capacity policy before reuse with an unattended or long-running producer.

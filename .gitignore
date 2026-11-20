@@ -2,3 +2,6 @@
 /.tools/
 /.validation/
 /.scratch/
+
+# Rust CLI build output
+/target/
