@@ -159,6 +159,58 @@ Tests **MUST** exercise the actual claim with observable evidence. A serializati
 
 Good: test that a failed writer propagates an error, that a stale plan cannot mutate its targets, or that the exact binary exposes promised nested help. Bad: test only a helper that mirrors the implementation, then claim the whole workflow works. See [code-standard qualification](code-standards.md#run-the-policy-checks-explicitly) and [what the book validates](plan-records.md#know-what-the-book-validates).
 
+### Test project behavior, not just dependency behavior
+
+In TDD, write a failing test for an observable project requirement, make it pass, then refactor while preserving that behavior. The test should fail when the project's behavior regresses, even if its dependencies still work. Do not add tests merely to increase their count or repeat a dependency's own contract.
+
+For example, suppose a CLI promises to resolve `--cwd` from its invocation directory, reject files before starting App Server, and send the canonical absolute directory in its request. The following are illustrative tests with hypothetical fixture helpers, not copied tests or provided APIs.
+
+**Bad evidence for that requirement: a parser-only assertion.**
+
+```rust,ignore
+let args = figue::from_slice::<ExampleArgs>(&["--cwd", "."])
+    .into_result()?
+    .get_silent();
+assert_eq!(args.cwd, PathBuf::from("."));
+```
+
+This checks that Figue puts an argument into a field. It still passes if the project sends `.` unchanged to App Server or accepts a file as a directory. Without a project-specific parsing risk or regression, it mostly repeats the dependency's contract.
+
+**Good positive regression: observe the request the project sends.**
+
+```rust,ignore
+let fixture = CliFixture::temporary_directory()?;
+let server = FakeAppServer::new();
+let expected = fixture.directory().canonicalize()?;
+
+// Run the real CLI path with the child process's cwd set to the fixture.
+let outcome = fixture.run_cli_with(&server, &["--cwd", "."])?;
+outcome.assert_success();
+let requests = server.recorded_requests();
+assert_eq!(requests.len(), 1);
+assert!(requests[0].cwd.is_absolute());
+assert_eq!(requests[0].cwd, expected);
+```
+
+The fake records the request after the project's validation, normalization and serialization, rather than calling the normalization helper directly. This test catches the project sending a relative path. Give each test an isolated invocation directory; do not race other tests by changing the test runner's process-wide current directory.
+
+**Good negative regression: reject a file before any server effect.**
+
+```rust,ignore
+let fixture = CliFixture::temporary_directory()?;
+fixture.write_file("not-a-directory.txt", b"fixture")?;
+let server = FakeAppServer::new(); // Records launch attempts as well as requests.
+
+let outcome = fixture.run_cli_with(&server, &["--cwd", "not-a-directory.txt"])?;
+outcome.assert_project_error("cwd must be a directory");
+assert_eq!(server.launch_attempts(), 0);
+assert!(server.recorded_requests().is_empty());
+```
+
+An error alone is insufficient: it could come from App Server after the project already started it or sent an invalid request. Assert the project's own rejection and the absence of the forbidden effects. The helper names and error wording above are illustrative; assert the real project's documented diagnostic and observable boundary.
+
+CLI contract tests still belong when they protect project-owned behavior: command dispatch, argument-to-request mapping, documented nested help, stream separation, exit codes, or a specific parser integration regression. Keep the smallest test that establishes the claim; avoid duplicating it at every layer. [SFM's test-pruning change at `c5b69718b`](https://github.com/TeamDman/SuperFactoryManager/commit/c5b69718b67a5dafb6c3f7034fafb7e5433dd3bf) is a concrete reference for removing Figue-only and duplicate assertions while retaining project behavior checks.
+
 These Rust fragments are contextual illustrations, explicitly skipped by rustdoc; this chapter does not claim they compile. The book build and local-link checks validate navigation, not program behavior. Public documentation **MUST** respect the [publication boundary](publication.md); publishing a description does not publish the referenced local source.
 
 ## Specify observable CLI contracts
