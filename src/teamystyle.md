@@ -80,6 +80,10 @@ This illustrates ownership and dependency direction, not a provided API or a com
 
 Rust code **MUST generally use one file per type**. Name the file after its type in snake case. Keep the type's inherent implementations and focused unit tests beside it. Use module declarations and re-exports to expose a coherent domain; do not turn `mod.rs` into a bag of type definitions.
 
+When a type belongs to a specific report, request, or other domain object, name it for that role so it stays recognizable in imports, search results, and call sites. Use `ActiveThreadsReportCoverage` in `active_threads_report_coverage.rs`, not `Coverage` in `coverage.rs`, when the type describes the coverage of that report. If the report has several related types, group them under `active_threads_report/`, one type per file, and use `mod.rs` for declarations and deliberate re-exports. The module groups the types; their names still carry the context.
+
+Name shared concepts for what they represent, not for their first caller. Keep `ThreadId` if it identifies a thread across the application. When renaming a field, check whether its name appears as a CLI flag or serialized key, and make any change to those names deliberate. A Rust type rename is not a format change unless the type name itself is exposed, for example as a schema name or wire tag.
+
 Good illustrative layout:
 
 ```text
