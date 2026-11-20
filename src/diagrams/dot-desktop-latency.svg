@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 201" role="img" aria-labelledby="title desc">
+  <title id="title">One direct Calculator launch: recorded milestones</title>
+  <desc id="desc">Acknowledgment at 5.129 seconds, host launch requested at 19.432 seconds, and final reply recorded at 27.645 seconds after chat receipt. The roughly 13-second human count uses an uncalibrated client reference.</desc>
+  <rect width="770" height="201" rx="12" fill="#f1f5f9"/>
+  <g fill="#17253d" font-family="system-ui,sans-serif">
+    <text x="38" y="28" font-size="17" font-weight="700">Recorded elapsed time from chat receipt</text>
+    <g font-size="13"><text x="38" y="55">Receipt</text><text x="166" y="55" text-anchor="middle">Acknowledgment</text><text x="524" y="55" text-anchor="middle">Host launch requested</text><text x="730" y="55" text-anchor="end">Final reply</text></g>
+  </g>
+  <path d="M38 65h128v34H38z" fill="#24649b"/><path d="M166 65h358v34H166z" fill="#21746b"/><path d="M524 65h206v34H524z" fill="#64458c"/>
+  <g fill="white" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600"><text x="102" y="87">5.129 s</text><text x="345" y="87">14.303 s</text><text x="627" y="87">8.213 s</text></g>
+  <g fill="#17253d" font-family="system-ui,sans-serif" font-size="13"><text x="38" y="120">0.000 s</text><text x="166" y="120" text-anchor="middle">5.129 s</text><text x="524" y="120" text-anchor="middle">19.432 s</text><text x="730" y="120" text-anchor="end">27.645 s</text></g>
+  <rect x="38" y="144" width="692" height="38" rx="5" fill="#e1e8f0"/>
+  <text x="50" y="168" fill="#17253d" font-family="system-ui,sans-serif" font-size="14"><tspan font-weight="700">Human count: about 13 s.</tspan> Separate observation, not aligned to the recorded clock.</text>
+</svg>

@@ -73,6 +73,7 @@
   - [Review plans and retain decisions](plan-records.md)
   - [Evaluate agent harnesses and memory](agent-harnesses.md)
     - [Locate work across execution environments](execution-environments.md)
+    - [ChatGPT Desktop, Dot, and Codex in VS Code](chatgpt-desktop-and-codex.md)
   - [Keep a migration aligned and fast](migration-workflows.md)
   - [Explore Rust interactively](interactive-rust.md)
   - [Render text with Liquid templates](liquid-templates.md)
