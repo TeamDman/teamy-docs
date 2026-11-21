@@ -23,3 +23,11 @@ A short companion prompt:
 Use the state-machine document to connect commands to preconditions, effects and observable results. Include background work and recovery as well as user-triggered actions; describe automatic transitions without pretending each requires a manual command. A command map should expose missing controls and unclear behavior before implementation.
 
 See [command-line tools](good-cli.md), [typed results and errors](output-shape.md), and [reviewable effects](writing-programs.md#make-effects-reviewable) for the implementation contracts. This companion framing is separate from Trevin's quoted prompt; it is not attributed to either tweet author.
+
+## Benchmark local LLM inference
+
+[Inference optimisation](https://github.com/sybil-solutions/inference-optimisation-skill) is an external agent skill from Sybil Solutions for tuning a local LLM server. It measures startup, time to first token, prompt processing (prefill), and generation throughput for one or multiple users. It also covers KV-cache sizing and speculative decoding.
+
+The useful pattern is to measure a baseline, estimate the performance ceiling, and compare one change at a time against interleaved control runs. Keep an experiment ledger and check the best configuration at the target context length and memory limit before adopting it. For a Teamy benchmark, pair that approach with [GPU inference correctness and timing](gpu-inference.md#measure-speed-together-with-correctness) and [resident inference](resident-inference.md).
+
+Status: external reference only. We have not adopted the skill, run its harness, or reproduced its performance claims.
