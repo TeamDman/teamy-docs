@@ -6,7 +6,7 @@ New Teamy CLI projects are expected to use Rust and [teamy-rust-cli](https://git
 
 This chapter describes the implementation at public revision [`7e62d72`](https://github.com/TeamDman/teamy-rust-cli/tree/7e62d72bbbf3ea1b302e48008da565e92d4b6c93), checked on 1 October 2026. Local additions are labelled separately. The reasons below explain our preferred use of the code; they are design judgments grounded in the implementation.
 
-The local [Rust code standards](code-standards.md) addition denies plain print macros, passes a chosen writer into `CliOutput::emit_to` and checks the policy with compile fixtures. Preserve its Cargo lint settings, `clippy.toml` and validation scripts when adopting that newer source. Its qualification and publication are being completed; the baseline linked above predates these changes.
+The template enforces the [Rust code standards](code-standards.md) for print macros and passes a chosen writer into `CliOutput::emit_to`. Carry forward the Cargo lint settings, `clippy.toml` and the Clippy invocation in `check-all.ps1` when adopting the template.
 
 ## Follow one command through the program
 
@@ -66,7 +66,7 @@ Build runtime expectations into new commands as well as correctness checks. The 
 
 Read `Cargo.toml`, `Cargo.lock` and `check-all.ps1` in the source snapshot you are adopting. A fork revision is part of the project's behavior. Do not assume a copied CLI uses the latest registry release or that updating its template also updates existing projects.
 
-The baseline [validation script](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/check-all.ps1) runs nightly formatting, Clippy with all features and warnings denied, an all-feature build, and tests with Tracy excluded. Its formatting step changes files despite being labelled a check. The local update uses nightly formatting with `--check`, Clippy with `--all-targets --all-features --no-deps -- -D warnings`, and a separate [lint policy regression script](code-standards.md#run-the-policy-checks-explicitly). Test new command behavior with a meaningful fixture and inspect stdout, stderr and status separately.
+The baseline [validation script](https://github.com/TeamDman/teamy-rust-cli/blob/7e62d72bbbf3ea1b302e48008da565e92d4b6c93/check-all.ps1) runs nightly formatting, Clippy with all features and warnings denied, an all-feature build, and tests with Tracy excluded. Its formatting step changes files despite being labelled a check. The local update uses nightly formatting with `--check`, and [Clippy with `--all-targets --all-features --no-deps -- -D warnings`](code-standards.md#run-the-policy-checks-explicitly). Test new command behavior with a meaningful fixture and inspect stdout, stderr and status separately.
 
 ## Observed gaps are work items
 

@@ -77,17 +77,16 @@ Terminal cleanup has a different boundary. Attempt restoration before releasing 
 
 ## Run the policy checks explicitly
 
-The local template's validation gate uses these commands:
+Run `./check-all.ps1` for formatting, Clippy, the build and tests. To run just the formatting and lint checks, use these commands.
 
 ```powershell
 rustup run nightly -- cargo fmt --all -- --check
 cargo clippy --all-targets --all-features --no-deps -- -D warnings
-./check-lint-policy.ps1
 ```
 
-Formatting checks do not rewrite source. Clippy checks the enabled targets and features. The policy script uses isolated compile fixtures to verify rejection of ordinary, qualified and renamed print macros, including build, test and example targets. Positive fixtures exercise writer output and the scoped bootstrap and Cargo exceptions; a stale expectation must fail. It derives the output directory from Cargo metadata so workspace-member fixtures stay with the workspace's build artifacts.
+Clippy reads the lint levels from `Cargo.toml` and the prohibited macros from `clippy.toml`. The all-targets invocation also checks test and example code.
 
-Qualification passed the full template `check-all.ps1`: formatting, strict Clippy, all 14 policy fixtures, the all-feature build and 18 tests, including nine writer-contract tests. Applying the same fixture runner to the `teamy_llm_cli` manifest passed all 14 cases; that package also passed release, offline, locked, all-target Clippy through the existing CUDA build wrapper. These checks establish the inspected output policy, not a security boundary or support for every future feature combination.
+During adoption, 14 compile fixtures verified the print rules and scoped exceptions in both the template and `teamy_llm_cli`. The template also passed 18 tests, including nine writer-contract tests.
 
 `cargo build` does not run Clippy. Compiler lints and Clippy lints have different checks. In a workspace, `[workspace.lints]` also needs each participating package to opt in with `[lints] workspace = true`; defining a root policy alone is insufficient. See [Cargo lint inheritance](https://doc.rust-lang.org/cargo/reference/workspaces.html#the-lints-table).
 
@@ -101,7 +100,7 @@ The broader template lint configuration closely matches [Microsoft's static veri
 
 [Microsoft's logging guidance](https://microsoft.github.io/rust-guidelines/guidelines/libs/resilience/index.html#M-LOG-NOT-PRINT) directs operational diagnostics through telemetry while permitting intentional CLI stdout. Our template keeps that distinction and adds an explicit-writer convention for command results. Its recommendation to [use reasoned lint expectations](https://microsoft.github.io/rust-guidelines/guidelines/universal/index.html#M-LINT-OVERRIDE-EXPECT) also informs our narrow exceptions.
 
-Grounding in the matching local checkouts: the template's `Cargo.toml`, `clippy.toml`, `build.rs`, `src/lib.rs`, `src/cli/output.rs`, `src/logging_init.rs`, `check-all.ps1` and `check-lint-policy.ps1`; the service's `crates/teamy_llm_cli/Cargo.toml`, `clippy.toml`, `build.rs`, `src/interactive/worker.rs`, `tui.rs` and `terminal_output.rs`. The local source identities above distinguish these validated additions from the published template baseline. Publishing this explanation does not publish or release those source commits.
+Grounding in the matching local checkouts: the template's `Cargo.toml`, `clippy.toml`, `build.rs`, `src/lib.rs`, `src/cli/output.rs`, `src/logging_init.rs`, and `check-all.ps1`; the service's `crates/teamy_llm_cli/Cargo.toml`, `clippy.toml`, `build.rs`, `src/interactive/worker.rs`, `tui.rs` and `terminal_output.rs`. The local source identities above distinguish these validated additions from the published template baseline. Publishing this explanation does not publish or release those source commits.
 
 ## Find dead APIs through visibility
 
