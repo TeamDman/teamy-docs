@@ -31,3 +31,5 @@ See [command-line tools](good-cli.md), [typed results and errors](output-shape.m
 The useful pattern is to measure a baseline, estimate the performance ceiling, and compare one change at a time against interleaved control runs. Keep an experiment ledger and check the best configuration at the target context length and memory limit before adopting it. For a Teamy benchmark, pair that approach with [GPU inference correctness and timing](gpu-inference.md#measure-speed-together-with-correctness) and [resident inference](resident-inference.md).
 
 Status: external reference only. We have not adopted the skill, run its harness, or reproduced its performance claims.
+
+Discovery source: [@0xSero on X](https://x.com/0xSero/status/2124238286457917649). Use the original thread for feedback if a benchmark makes the skill worth recommending.
