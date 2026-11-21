@@ -179,6 +179,8 @@ For a constrained grammar, parser, semantic checker or verified state machine, r
 | Solve Sudoku, express relationships or evaluate Scryer Prolog | [Explore relationships with Prolog](logic-programming.md) | Scryer example; solver and Minecraft integration are experiments. |
 | Find operations that can produce a type, plan an inventory or explain a route | [Typed capability planning](decision-planning.md) | Cloud Terrastodon's offline graph and Excalidraw export; a Prolog comparison is proposed. |
 | Limit a worker's permissions, compare object capabilities or understand Azure RBAC scope | [Delegated authority](delegated-authority.md) | Cap'n Proto and E are prior art; validate service-specific enforcement. |
+| Check an agent action, delegate a grant or revoke access to a summary | [Teamy Agent](teamy-agent.md) | Synthetic broker checks on document reads, submissions and replay. |
+| Find a transfer route or identify which step needs approval | [Teamy Capability Lab](teamy-capability-lab.md) | Offline route search with per-step permission checks and cost estimates. |
 | Coordinate agents through shared state, explore Spacetime or Veilid, or synchronize media with Syncplay and mpv | [Shared coordination](shared-coordination.md) | Stigmergy and transport candidates; no integration claimed. |
 | Move a file between desktop and cloud, or distinguish a task from its environment | [Execution environments](execution-environments.md) | Public OpenAI documentation and instance-specific transfer constraints. |
 

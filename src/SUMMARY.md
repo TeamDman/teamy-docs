@@ -79,6 +79,8 @@
   - [Render text with Liquid templates](liquid-templates.md)
   - [Find possible actions from typed capabilities](decision-planning.md)
     - [Delegate only the authority an action needs](delegated-authority.md)
+    - [Authorize agent actions with Teamy Agent](teamy-agent.md)
+    - [Compare action plans with Teamy Capability Lab](teamy-capability-lab.md)
     - [Coordinate through shared state and messages](shared-coordination.md)
   - [Formal methods and language implementation](formal-methods.md)
     - [Explore relationships with Prolog](logic-programming.md)
