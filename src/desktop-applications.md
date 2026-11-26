@@ -15,3 +15,9 @@ Choose the behavior your application needs, then reuse its prior art. A tray ico
 | Host interactive programs or render terminal output | [Terminal integration](terminal-integration.md) | Teamy-Studio. |
 
 The CLI template does not currently supply a tray icon or desktop event loop. Add that capability explicitly when it serves the application. Connect background work to [logging](logging.md) and [cancellation](cancellation.md), and keep slow operations off the event thread.
+
+## Button sounds for UI feedback
+
+[Button Sounds](https://buttons.joshwcomeau.com/) is Josh W. Comeau’s interactive collection of recorded clicks, presses, and toggles. It uses multiple recordings of each sound so repeated presses don’t play the exact same sample. The [source repository](https://github.com/joshwcomeau/button-sounds) includes a JavaScript library and documents [standalone WAV and MP3 files](https://github.com/joshwcomeau/button-sounds/blob/main/docs/raw-audio-files.md) for use outside JavaScript.
+
+Use it as a reference for optional tactile feedback: keep sounds quiet and easy to mute, and never make sound the only indication that an action succeeded. See the [Hacker News discussion](https://news.ycombinator.com/item?id=50638032) for the tradeoffs around audible feedback and sample variation.
